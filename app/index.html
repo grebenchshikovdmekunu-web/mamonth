@@ -517,6 +517,40 @@
             <label>Price Per Fraction (SOL)</label>
             <input type="number" id="assetPrice" placeholder="1" step="0.001">
         </div>
+
+        <!-- НОВЫЕ ПОЛЯ -->
+        <div style="border-top:1px solid #1e293b;margin:24px 0 20px;"></div>
+        <div style="font-size:13px;font-weight:600;color:#64748b;text-transform:uppercase;
+                    letter-spacing:0.5px;margin-bottom:16px;">
+            🔗 Links & Social
+        </div>
+
+        <div class="form-group">
+            <label>Official Website</label>
+            <input type="url" id="assetWebsite" placeholder="https://yourcompany.com">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Social Media</label>
+                <input type="text" id="assetSocial" placeholder="@yourhandle">
+            </div>
+            <div class="form-group">
+                <label>Telegram</label>
+                <input type="text" id="assetTelegram" placeholder="@yourchannel">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Asset Category</label>
+            <select id="assetCategory" style="width:100%;background:#0f172a;border:1px solid #1e293b;
+                    border-radius:10px;padding:12px 16px;color:#e2e8f0;font-size:14px;outline:none;">
+                <option value="real-estate">🏢 Real Estate</option>
+                <option value="bonds">📜 Bonds</option>
+                <option value="energy">⚡ Energy</option>
+                <option value="commodities">🏭 Commodities</option>
+                <option value="other">🔷 Other</option>
+            </select>
+        </div>
+
         <button class="submit-btn" onclick="createAsset()">🚀 Tokenize Asset</button>
     </div>
 </div>
@@ -625,48 +659,84 @@
 
     // ============ МАРКЕТПЛЕЙС ============
     function renderAssets() {
-        const grid = document.getElementById("assetsGrid");
-        grid.innerHTML = demoAssets.map(asset => {
-            const soldPct = Math.round((1 - asset.availableFractions / asset.totalFractions) * 100);
-            return `
-            <div class="asset-card">
-                <div class="asset-img">${asset.icon}</div>
-                <div class="asset-body">
-                    <div class="asset-name">${asset.name}</div>
-                    <div class="asset-desc">${asset.description}</div>
-                    <div class="asset-stats">
-                        <div class="asset-stat">
-                            <div class="asset-stat-label">Total Value</div>
-                            <div class="asset-stat-value">${asset.totalValue} SOL</div>
-                        </div>
-                        <div class="asset-stat">
-                            <div class="asset-stat-label">Annual Yield</div>
-                            <div class="asset-stat-value" style="color:#14F195">${asset.yield}</div>
-                        </div>
-                        <div class="asset-stat">
-                            <div class="asset-stat-label">Per Fraction</div>
-                            <div class="asset-stat-value">${asset.pricePerFraction} SOL</div>
-                        </div>
-                        <div class="asset-stat">
-                            <div class="asset-stat-label">Available</div>
-                            <div class="asset-stat-value">${asset.availableFractions}</div>
-                        </div>
-                    </div>
-                    <div class="progress-label">
-                        <span>Sold: ${soldPct}%</span>
-                        <span>${asset.totalFractions - asset.availableFractions} / ${asset.totalFractions}</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width:${soldPct}%"></div>
-                    </div>
-                    <button class="buy-btn" onclick="openBuyModal(${asset.id})">
-                        Buy Fractions — ${asset.pricePerFraction} SOL each
-                    </button>
-                </div>
-            </div>`;
-        }).join("");
-    }
+    const grid = document.getElementById("assetsGrid");
+    grid.innerHTML = demoAssets.map(asset => {
+        const soldPct = Math.round(
+            (1 - asset.availableFractions / asset.totalFractions) * 100
+        );
 
+        // Строим блок ссылок
+        const links = [];
+        if (asset.website) links.push(
+            `<a href="${asset.website}" target="_blank"
+             style="color:#64748b;font-size:12px;text-decoration:none;
+                    display:flex;align-items:center;gap:4px;">
+             🌐 Website</a>`
+        );
+        if (asset.twitter) links.push(
+            `<a href="https://twitter.com/${asset.twitter.replace('@','')}"
+             target="_blank"
+             style="color:#64748b;font-size:12px;text-decoration:none;
+                    display:flex;align-items:center;gap:4px;">
+             𝕏 ${asset.twitter}</a>`
+        );
+        if (asset.telegram) links.push(
+            `<a href="https://t.me/${asset.telegram.replace('@','')}"
+             target="_blank"
+             style="color:#64748b;font-size:12px;text-decoration:none;
+                    display:flex;align-items:center;gap:4px;">
+             ✈️ ${asset.telegram}</a>`
+        );
+
+        const linksHtml = links.length > 0
+            ? `<div style="display:flex;gap:12px;flex-wrap:wrap;
+                           margin-bottom:12px;padding-top:4px;">
+                 ${links.join("")}
+               </div>`
+            : "";
+
+        return `
+        <div class="asset-card">
+            <div class="asset-img">${asset.icon}</div>
+            <div class="asset-body">
+                <div class="asset-name">${asset.name}</div>
+                <div class="asset-desc">${asset.description}</div>
+                ${linksHtml}
+                <div class="asset-stats">
+                    <div class="asset-stat">
+                        <div class="asset-stat-label">Total Value</div>
+                        <div class="asset-stat-value">${asset.totalValue} SOL</div>
+                    </div>
+                    <div class="asset-stat">
+                        <div class="asset-stat-label">Annual Yield</div>
+                        <div class="asset-stat-value" style="color:#14F195">
+                            ${asset.yield}
+                        </div>
+                    </div>
+                    <div class="asset-stat">
+                        <div class="asset-stat-label">Per Fraction</div>
+                        <div class="asset-stat-value">${asset.pricePerFraction} SOL</div>
+                    </div>
+                    <div class="asset-stat">
+                        <div class="asset-stat-label">Available</div>
+                        <div class="asset-stat-value">${asset.availableFractions}</div>
+                    </div>
+                </div>
+                <div class="progress-label">
+                    <span>Sold: ${soldPct}%</span>
+                    <span>${asset.totalFractions - asset.availableFractions}
+                          / ${asset.totalFractions}</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width:${soldPct}%"></div>
+                </div>
+                <button class="buy-btn" onclick="openBuyModal(${asset.id})">
+                    Buy Fractions — ${asset.pricePerFraction} SOL each
+                </button>
+            </div>
+        </div>`;
+    }).join("");
+}
     // ============ ПОКУПКА ============
     function openBuyModal(assetId) {
         if (!walletConnected) {
@@ -721,39 +791,53 @@
 
     // ============ СОЗДАНИЕ АКТИВА ============
     async function createAsset() {
-        if (!walletConnected) {
-            showToast("⚠️", "Connect your wallet first", "error");
-            return;
-        }
-
-        const name = document.getElementById("assetName").value.trim();
-        const desc = document.getElementById("assetDesc").value.trim();
-        const value = parseFloat(document.getElementById("assetValue").value);
-        const fractions = parseInt(document.getElementById("assetFractions").value);
-        const price = parseFloat(document.getElementById("assetPrice").value);
-
-        if (!name || !desc || !value || !fractions || !price) {
-            showToast("⚠️", "Please fill all fields", "error");
-            return;
-        }
-
-        showToast("⏳", "Creating asset on Solana...", "success");
-
-        setTimeout(() => {
-            showToast("✅", `Asset "${name}" tokenized successfully!`, "success");
-            // Добавляем в список
-            demoAssets.push({
-                id: demoAssets.length + 1,
-                name, description: desc,
-                totalValue: value, totalFractions: fractions,
-                availableFractions: fractions,
-                pricePerFraction: price,
-                yield: "TBD", icon: "🏗️"
-            });
-            renderAssets();
-            showTab("marketplace");
-        }, 2000);
+    if (!walletConnected) {
+        showToast("⚠️", "Connect your wallet first", "error");
+        return;
     }
+
+    const name = document.getElementById("assetName").value.trim();
+    const desc = document.getElementById("assetDesc").value.trim();
+    const value = parseFloat(document.getElementById("assetValue").value);
+    const fractions = parseInt(document.getElementById("assetFractions").value);
+    const price = parseFloat(document.getElementById("assetPrice").value);
+    const website = document.getElementById("assetWebsite").value.trim();
+    const twitter = document.getElementById("assetTwitter").value.trim();
+    const telegram = document.getElementById("assetTelegram").value.trim();
+    const category = document.getElementById("assetCategory").value;
+
+    if (!name || !desc || !value || !fractions || !price) {
+        showToast("⚠️", "Please fill all required fields", "error");
+        return;
+    }
+
+    const categoryIcons = {
+        "real-estate": "🏢",
+        "bonds": "📜",
+        "energy": "⚡",
+        "commodities": "🏭",
+        "other": "🔷"
+    };
+
+    showToast("⏳", "Creating asset on Solana...", "success");
+
+    setTimeout(() => {
+        showToast("✅", `Asset "${name}" tokenized successfully!`, "success");
+        demoAssets.push({
+            id: demoAssets.length + 1,
+            name, description: desc,
+            totalValue: value,
+            totalFractions: fractions,
+            availableFractions: fractions,
+            pricePerFraction: price,
+            yield: "TBD",
+            icon: categoryIcons[category] || "🔷",
+            website, twitter, telegram, category
+        });
+        renderAssets();
+        showTab("marketplace");
+    }, 2000);
+}
 
     // ============ ПОРТФОЛИО ============
     let portfolio = [];
