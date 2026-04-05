@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mamonth — Tokenized Assets on Solana</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #0a0a0f;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        /* NAVBAR */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            border-bottom: 1px solid #1e293b;
+            background: rgba(10,10,15,0.95);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #9945FF, #14F195);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-right { display: flex; align-items: center; gap: 16px; }
+
+        .network-badge {
+            background: #14F19520;
+            color: #14F195;
+            border: 1px solid #14F19540;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        #connectBtn {
+            background: linear-gradient(135deg, #9945FF, #7c3aed);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        #connectBtn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+        #walletInfo {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            background: #1e293b;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+        }
+
+        .wallet-dot {
+            width: 8px; height: 8px;
+            background: #14F195;
+            border-radius: 50%;
+        }
+
+        /* HERO */
+        .hero {
+            text-align: center;
+            padding: 80px 40px 60px;
+        }
+
+        .hero h1 {
+            font-size: 52px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, #9945FF, #14F195);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: #94a3b8;
+            max-width: 560px;
+            margin: 0 auto 40px;
+            line-height: 1.6;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            margin-top: 48px;
+        }
+
+        .stat { text-align: center; }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #14F195;
+        }
+        .stat-label { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 40px 40px;
+        }
+
+        .tab {
+            padding: 10px 24px;
+            border-radius: 10px;
+            border: 1px solid #1e293b;
+            background: transparent;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #9945FF20, #14F19520);
+            border-color: #9945FF60;
+            color: #e2e8f0;
+        }
+
+        /* SECTIONS */
+        .section { display: none; padding: 0 40px 60px; max-width: 1100px; margin: 0 auto; }
+        .section.active { display: block; }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: #f1f5f9;
+        }
+
+        /* ASSET GRID */
+        .assets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .asset-card {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .asset-card:hover {
+            border-color: #9945FF40;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(153,69,255,0.1);
+        }
+
+        .asset-img {
+            width: 100%;
+            height: 160px;
+            background: linear-gradient(135deg, #1e1b4b, #312e81);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .asset-body { padding: 20px; }
+
+        .asset-name {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .asset-desc {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .asset-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .asset-stat {
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .asset-stat-label { font-size: 11px; color: #64748b; margin-bottom: 3px; }
+        .asset-stat-value { font-size: 14px; font-weight: 600; color: #e2e8f0; }
+
+        .progress-bar {
+            background: #1e293b;
+            border-radius: 4px;
+            height: 6px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #9945FF, #14F195);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .buy-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #9945FF, #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .buy-btn:hover { opacity: 0.85; }
+
+        /* FORMS */
+        .form-card {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 560px;
+        }
+
+        .form-group { margin-bottom: 20px; }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #e2e8f0;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            border-color: #9945FF;
+        }
+
+        .form-group textarea { resize: vertical; min-height: 80px; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #9945FF, #14F195);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 700;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .submit-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* TOAST */
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 999;
+            max-width: 360px;
+        }
+
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-color: #14F19540; }
+        .toast.error { border-color: #ef444440; }
+        .toast-icon { font-size: 20px; }
+
+        /* MODAL */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show { display: flex; }
+
+        .modal {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 20px;
+            padding: 32px;
+            width: 400px;
+            max-width: 90vw;
+        }
+
+        .modal h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+        .modal p { color: #64748b; font-size: 14px; margin-bottom: 24px; }
+
+        .modal-input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .modal-input-row input {
+            flex: 1;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #e2e8f0;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .modal-input-row input:focus { border-color: #9945FF; }
+
+        .modal-btns { display: flex; gap: 10px; }
+
+        .btn-cancel {
+            flex: 1;
+            padding: 12px;
+            background: #1e293b;
+            color: #94a3b8;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .btn-confirm {
+            flex: 1;
+            padding: 12px;
+            background: linear-gradient(135deg, #9945FF, #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* PORTFOLIO */
+        .portfolio-card {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .portfolio-left { display: flex; align-items: center; gap: 16px; }
+        .portfolio-icon {
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, #9945FF20, #14F19520);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .portfolio-name { font-size: 16px; font-weight: 600; }
+        .portfolio-fractions { font-size: 13px; color: #64748b; margin-top: 3px; }
+        .portfolio-value { font-size: 18px; font-weight: 700; color: #14F195; }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+        .empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; }
+        .empty-state p { font-size: 16px; }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+    <div class="logo">🦣 Mamonth</div>
+    <div class="nav-right">
+        <div class="network-badge">● Devnet</div>
+        <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+        <div id="walletInfo">
+            <div class="wallet-dot"></div>
+            <span id="walletAddress"></span>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+    <h1>Invest in <span>Real Assets</span><br>Like a Mamonth</h1><br>From $10</h1>
+    <p>Buy fractional ownership of real estate, bonds and commodities — tokenized on Solana. Big moves, small entry.</p>
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-value">$2.4M</div>
+            <div class="stat-label">Total Value Locked</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">3</div>
+            <div class="stat-label">Active Assets</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">12.4%</div>
+            <div class="stat-label">Avg. Annual Yield</div>
+        </div>
+    </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+    <button class="tab active" onclick="showTab('marketplace')">🏪 Marketplace</button>
+    <button class="tab" onclick="showTab('create')">➕ List Asset</button>
+    <button class="tab" onclick="showTab('portfolio')">💼 My Portfolio</button>
+</div>
+
+<!-- MARKETPLACE -->
+<div id="marketplace" class="section active">
+    <div class="section-title">Available Assets</div>
+    <div class="assets-grid" id="assetsGrid"></div>
+</div>
+
+<!-- CREATE ASSET -->
+<div id="create" class="section">
+    <div class="section-title">Tokenize Your Asset</div>
+    <div class="form-card">
+        <div class="form-group">
+            <label>Asset Name</label>
+            <input type="text" id="assetName" placeholder="e.g. Almaty Business Center">
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <textarea id="assetDesc" placeholder="Describe the asset, location, expected yield..."></textarea>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Total Value (SOL)</label>
+                <input type="number" id="assetValue" placeholder="1000">
+            </div>
+            <div class="form-group">
+                <label>Total Fractions</label>
+                <input type="number" id="assetFractions" placeholder="1000">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Price Per Fraction (SOL)</label>
+            <input type="number" id="assetPrice" placeholder="1" step="0.001">
+        </div>
+        <button class="submit-btn" onclick="createAsset()">🚀 Tokenize Asset</button>
+    </div>
+</div>
+
+<!-- PORTFOLIO -->
+<div id="portfolio" class="section">
+    <div class="section-title">My Investments</div>
+    <div id="portfolioContent">
+        <div class="empty-state">
+            <div class="empty-icon">💼</div>
+            <p>Connect wallet to see your investments</p>
+        </div>
+    </div>
+</div>
+
+<!-- BUY MODAL -->
+<div class="modal-overlay" id="buyModal">
+    <div class="modal">
+        <h3 id="modalAssetName">Buy Fractions</h3>
+        <p id="modalAssetPrice">Price per fraction: — SOL</p>
+        <div class="modal-input-row">
+            <input type="number" id="buyAmount" placeholder="Number of fractions" min="1">
+        </div>
+        <div id="modalTotal" style="font-size:13px;color:#64748b;margin-bottom:16px;"></div>
+        <div class="modal-btns">
+            <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+            <button class="btn-confirm" onclick="confirmBuy()">Buy Now</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+    <span class="toast-icon" id="toastIcon"></span>
+    <span id="toastMsg"></span>
+</div>
+
+<script>
+    // ============ СОСТОЯНИЕ ============
+    const PROGRAM_ID = "9GWa9HyP887TpVKAqk9qwd6TaCyVyULgARkEY4wCFDkm";
+    let walletConnected = false;
+    let walletPubkey = null;
+    let selectedAsset = null;
+
+    // Демо активы (в реальном приложении грузятся из блокчейна)
+    const demoAssets = [
+        {
+            id: 1,
+            name: "Almaty Tower — Floor 12",
+            description: "Commercial office space in the heart of Almaty. 450 sqm, fully leased to IT company.",
+            totalValue: 500,
+            totalFractions: 1000,
+            availableFractions: 650,
+            pricePerFraction: 0.5,
+            yield: "11.2%",
+            icon: "🏢"
+        },
+        {
+            id: 2,
+            name: "Kazakhstan Gov Bond 2026",
+            description: "Tokenized government bond with guaranteed 9.5% annual return. Maturity: Dec 2026.",
+            totalValue: 200,
+            totalFractions: 500,
+            availableFractions: 280,
+            pricePerFraction: 0.4,
+            yield: "9.5%",
+            icon: "📜"
+        },
+        {
+            id: 3,
+            name: "Solar Farm — Shymkent",
+            description: "Fractional ownership in 5MW solar energy plant. Revenue from electricity sales.",
+            totalValue: 800,
+            totalFractions: 2000,
+            availableFractions: 1850,
+            pricePerFraction: 0.4,
+            yield: "14.8%",
+            icon: "☀️"
+        }
+    ];
+
+    // ============ КОШЕЛЁК ============
+    async function connectWallet() {
+        if (!window.solana || !window.solana.isPhantom) {
+            showToast("❌", "Phantom wallet not found. Please install it.", "error");
+            setTimeout(() => window.open("https://phantom.app", "_blank"), 1500);
+            return;
+        }
+
+        try {
+            const response = await window.solana.connect();
+            walletPubkey = response.publicKey.toString();
+            walletConnected = true;
+
+            document.getElementById("connectBtn").style.display = "none";
+            document.getElementById("walletInfo").style.display = "flex";
+            document.getElementById("walletAddress").textContent =
+                walletPubkey.slice(0, 4) + "..." + walletPubkey.slice(-4);
+
+            showToast("✅", "Wallet connected!", "success");
+            loadPortfolio();
+        } catch (err) {
+            showToast("❌", "Connection rejected", "error");
+        }
+    }
+
+    // ============ МАРКЕТПЛЕЙС ============
+    function renderAssets() {
+        const grid = document.getElementById("assetsGrid");
+        grid.innerHTML = demoAssets.map(asset => {
+            const soldPct = Math.round((1 - asset.availableFractions / asset.totalFractions) * 100);
+            return `
+            <div class="asset-card">
+                <div class="asset-img">${asset.icon}</div>
+                <div class="asset-body">
+                    <div class="asset-name">${asset.name}</div>
+                    <div class="asset-desc">${asset.description}</div>
+                    <div class="asset-stats">
+                        <div class="asset-stat">
+                            <div class="asset-stat-label">Total Value</div>
+                            <div class="asset-stat-value">${asset.totalValue} SOL</div>
+                        </div>
+                        <div class="asset-stat">
+                            <div class="asset-stat-label">Annual Yield</div>
+                            <div class="asset-stat-value" style="color:#14F195">${asset.yield}</div>
+                        </div>
+                        <div class="asset-stat">
+                            <div class="asset-stat-label">Per Fraction</div>
+                            <div class="asset-stat-value">${asset.pricePerFraction} SOL</div>
+                        </div>
+                        <div class="asset-stat">
+                            <div class="asset-stat-label">Available</div>
+                            <div class="asset-stat-value">${asset.availableFractions}</div>
+                        </div>
+                    </div>
+                    <div class="progress-label">
+                        <span>Sold: ${soldPct}%</span>
+                        <span>${asset.totalFractions - asset.availableFractions} / ${asset.totalFractions}</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width:${soldPct}%"></div>
+                    </div>
+                    <button class="buy-btn" onclick="openBuyModal(${asset.id})">
+                        Buy Fractions — ${asset.pricePerFraction} SOL each
+                    </button>
+                </div>
+            </div>`;
+        }).join("");
+    }
+
+    // ============ ПОКУПКА ============
+    function openBuyModal(assetId) {
+        if (!walletConnected) {
+            showToast("⚠️", "Connect your wallet first", "error");
+            return;
+        }
+        selectedAsset = demoAssets.find(a => a.id === assetId);
+        document.getElementById("modalAssetName").textContent = selectedAsset.name;
+        document.getElementById("modalAssetPrice").textContent =
+            `Price per fraction: ${selectedAsset.pricePerFraction} SOL`;
+        document.getElementById("buyAmount").value = "";
+        document.getElementById("modalTotal").textContent = "";
+        document.getElementById("buyModal").classList.add("show");
+    }
+
+    document.getElementById("buyAmount").addEventListener("input", function() {
+        const amount = parseFloat(this.value) || 0;
+        if (selectedAsset && amount > 0) {
+            const total = (amount * selectedAsset.pricePerFraction).toFixed(3);
+            document.getElementById("modalTotal").textContent = `Total: ${total} SOL`;
+        }
+    });
+
+    function closeModal() {
+        document.getElementById("buyModal").classList.remove("show");
+        selectedAsset = null;
+    }
+
+    async function confirmBuy() {
+        const amount = parseInt(document.getElementById("buyAmount").value);
+        if (!amount || amount < 1) {
+            showToast("⚠️", "Enter number of fractions", "error");
+            return;
+        }
+        if (amount > selectedAsset.availableFractions) {
+            showToast("⚠️", `Only ${selectedAsset.availableFractions} fractions available`, "error");
+            return;
+        }
+
+        closeModal();
+        showToast("⏳", "Sending transaction to Solana...", "success");
+
+        // Симуляция транзакции (в продакшне здесь будет реальный вызов смарт-контракта)
+        setTimeout(() => {
+            selectedAsset = demoAssets.find(a => a.id === selectedAsset?.id);
+            showToast("✅", `Successfully bought ${amount} fractions!`, "success");
+
+            // Добавляем в портфолио
+            addToPortfolio(selectedAsset, amount);
+        }, 2000);
+    }
+
+    // ============ СОЗДАНИЕ АКТИВА ============
+    async function createAsset() {
+        if (!walletConnected) {
+            showToast("⚠️", "Connect your wallet first", "error");
+            return;
+        }
+
+        const name = document.getElementById("assetName").value.trim();
+        const desc = document.getElementById("assetDesc").value.trim();
+        const value = parseFloat(document.getElementById("assetValue").value);
+        const fractions = parseInt(document.getElementById("assetFractions").value);
+        const price = parseFloat(document.getElementById("assetPrice").value);
+
+        if (!name || !desc || !value || !fractions || !price) {
+            showToast("⚠️", "Please fill all fields", "error");
+            return;
+        }
+
+        showToast("⏳", "Creating asset on Solana...", "success");
+
+        setTimeout(() => {
+            showToast("✅", `Asset "${name}" tokenized successfully!`, "success");
+            // Добавляем в список
+            demoAssets.push({
+                id: demoAssets.length + 1,
+                name, description: desc,
+                totalValue: value, totalFractions: fractions,
+                availableFractions: fractions,
+                pricePerFraction: price,
+                yield: "TBD", icon: "🏗️"
+            });
+            renderAssets();
+            showTab("marketplace");
+        }, 2000);
+    }
+
+    // ============ ПОРТФОЛИО ============
+    let portfolio = [];
+
+    function addToPortfolio(asset, amount) {
+        const existing = portfolio.find(p => p.id === asset.id);
+        if (existing) {
+            existing.fractions += amount;
+        } else {
+            portfolio.push({ ...asset, fractions: amount });
+        }
+        renderPortfolio();
+    }
+
+    function renderPortfolio() {
+        const container = document.getElementById("portfolioContent");
+        if (portfolio.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">💼</div>
+                    <p>You don't have any investments yet</p>
+                </div>`;
+            return;
+        }
+
+        const totalValue = portfolio.reduce((sum, p) => sum + p.fractions * p.pricePerFraction, 0);
+        container.innerHTML = `
+            <div style="background:#111827;border:1px solid #1e293b;border-radius:12px;padding:20px;margin-bottom:24px;display:flex;gap:32px;">
+                <div><div style="font-size:13px;color:#64748b">Total Invested</div>
+                <div style="font-size:24px;font-weight:700;color:#14F195">${totalValue.toFixed(2)} SOL</div></div>
+                <div><div style="font-size:13px;color:#64748b">Assets</div>
+                <div style="font-size:24px;font-weight:700">${portfolio.length}</div></div>
+            </div>` +
+            portfolio.map(p => `
+            <div class="portfolio-card">
+                <div class="portfolio-left">
+                    <div class="portfolio-icon">${p.icon}</div>
+                    <div>
+                        <div class="portfolio-name">${p.name}</div>
+                        <div class="portfolio-fractions">${p.fractions} fractions owned · ${p.yield} yield</div>
+                    </div>
+                </div>
+                <div class="portfolio-value">${(p.fractions * p.pricePerFraction).toFixed(2)} SOL</div>
+            </div>`).join("");
+    }
+
+    function loadPortfolio() { renderPortfolio(); }
+
+    // ============ UI HELPERS ============
+    function showTab(tab) {
+        document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        document.getElementById(tab).classList.add("active");
+        event.target.classList.add("active");
+    }
+
+    let toastTimer;
+    function showToast(icon, msg, type) {
+        const toast = document.getElementById("toast");
+        document.getElementById("toastIcon").textContent = icon;
+        document.getElementById("toastMsg").textContent = msg;
+        toast.className = `toast ${type} show`;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 3500);
+    }
+
+    // ============ ИНИЦИАЛИЗАЦИЯ ============
+    renderAssets();
+
+    // Автоподключение если Phantom уже был подключён
+    window.addEventListener("load", async () => {
+        if (window.solana?.isPhantom && window.solana.isConnected) {
+            await connectWallet();
+        }
+    });
+</script>
+</body>
+</html>
