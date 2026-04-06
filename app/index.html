@@ -6,6 +6,7 @@
     <title>Mamonth — Tokenized Assets on Solana</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.1.1/dist/chartjs-chart-financial.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', -apple-system, sans-serif; background: #0a0a0f; color: #e2e8f0; min-height: 100vh; }
@@ -311,11 +312,16 @@ const demoAssets = [
     { id:3, name:"Talgo Kazakhstan — Rail Bond", description:"Tokenized corporate bond from Talgo Kazakhstan. High-speed rail manufacturer operating in Almaty. Fixed 10.5% annual return, maturity 2027.", totalValue:500, totalFractions:1000, availableFractions:780, pricePerFraction:0.5, yield:"10.5%", icon:"🚄", website:"https://talgo.kz", twitter:"@talgokz", telegram:"@talgokazakhstan", category:"Bond", basePrice:0.5 }
 ];
 
-function genPriceData(base, points, vol) {
+function genCandleData(base, points, vol) {
     const data = []; let price = base * 0.92; const now = Date.now();
     for (let i = points; i >= 0; i--) {
-        price = Math.max(base * 0.5, price + (Math.random() - 0.47) * vol);
-        data.push({ x: now - i * 3600000, y: parseFloat(price.toFixed(5)) });
+        const open = price;
+        const change = (Math.random() - 0.47) * vol;
+        const close = Math.max(base * 0.4, open + change);
+        const high = Math.max(open, close) + Math.random() * vol * 0.6;
+        const low  = Math.min(open, close) - Math.random() * vol * 0.6;
+        data.push({ x: now - i * 3600000, o: parseFloat(open.toFixed(5)), h: parseFloat(high.toFixed(5)), l: parseFloat(Math.max(low, base*0.3).toFixed(5)), c: parseFloat(close.toFixed(5)) });
+        price = close;
     }
     return data;
 }
@@ -325,6 +331,9 @@ function genVolData(points) {
     for (let i = points; i >= 0; i--) data.push({ x: now - i * 3600000, y: Math.floor(Math.random() * 600 + 80) });
     return data;
 }
+
+let candleData = [];
+let currentCandle = null;
 
 async function connectWallet() {
     if (!window.solana || !window.solana.isPhantom) { enableDemoMode(); return; }
@@ -395,16 +404,29 @@ function updatePriceHeader() {
 
 function tickPrice() {
     if (!currentAsset) return;
-    currentAsset.pricePerFraction = Math.max(0.001, currentAsset.pricePerFraction + (Math.random() - 0.49) * 0.008);
+    const change = (Math.random() - 0.49) * 0.008;
+    currentAsset.pricePerFraction = Math.max(0.001, currentAsset.pricePerFraction + change);
     updatePriceHeader();
     updateSummary();
-    if (priceChart) {
-        priceChart.data.datasets[0].data.push({ x: Date.now(), y: parseFloat(currentAsset.pricePerFraction.toFixed(5)) });
-        if (priceChart.data.datasets[0].data.length > 60) priceChart.data.datasets[0].data.shift();
-        const prices = priceChart.data.datasets[0].data.map(d => d.y);
-        const up = prices[prices.length-1] >= prices[0];
-        priceChart.data.datasets[0].borderColor = up ? "#14F195" : "#ef4444";
-        priceChart.data.datasets[0].backgroundColor = up ? "rgba(20,241,149,0.07)" : "rgba(239,68,68,0.07)";
+
+    if (priceChart && candleData.length > 0) {
+        const last = candleData[candleData.length - 1];
+        const price = currentAsset.pricePerFraction;
+        const now = Date.now();
+
+        if (currentCandle && now - currentCandle.x < 30000) {
+            currentCandle.c = parseFloat(price.toFixed(5));
+            currentCandle.h = parseFloat(Math.max(currentCandle.h, price).toFixed(5));
+            currentCandle.l = parseFloat(Math.min(currentCandle.l, price).toFixed(5));
+            candleData[candleData.length - 1] = { ...currentCandle };
+        } else {
+            const newCandle = { x: now, o: parseFloat(price.toFixed(5)), h: parseFloat(price.toFixed(5)), l: parseFloat(price.toFixed(5)), c: parseFloat(price.toFixed(5)) };
+            candleData.push(newCandle);
+            currentCandle = newCandle;
+            if (candleData.length > 60) candleData.shift();
+        }
+
+        priceChart.data.datasets[0].data = [...candleData];
         priceChart.update('none');
     }
 }
@@ -412,34 +434,87 @@ function tickPrice() {
 function renderCharts() {
     if (priceChart) { priceChart.destroy(); priceChart = null; }
     if (volChart) { volChart.destroy(); volChart = null; }
-    const priceData = genPriceData(currentAsset.basePrice, 48, currentAsset.basePrice * 0.018);
-    const volData = genVolData(48);
-    const prices = priceData.map(d => d.y);
-    document.getElementById("statOpen").textContent = prices[0].toFixed(4) + " SOL";
-    document.getElementById("statHigh").textContent = Math.max(...prices).toFixed(4) + " SOL";
-    document.getElementById("statLow").textContent = Math.min(...prices).toFixed(4) + " SOL";
-    document.getElementById("statVol").textContent = volData.reduce((s,d) => s+d.y, 0).toLocaleString();
-    const up = prices[prices.length-1] >= prices[0];
-    const lineColor = up ? "#14F195" : "#ef4444";
-    const fillColor = up ? "rgba(20,241,149,0.07)" : "rgba(239,68,68,0.07)";
+
+    candleData = genCandleData(currentAsset.basePrice, 60, currentAsset.basePrice * 0.018);
+    currentCandle = candleData[candleData.length - 1];
+    const volData = genVolData(60);
+
+    const highs = candleData.map(d => d.h);
+    const lows  = candleData.map(d => d.l);
+    document.getElementById("statOpen").textContent = candleData[0].o.toFixed(4) + " SOL";
+    document.getElementById("statHigh").textContent = Math.max(...highs).toFixed(4) + " SOL";
+    document.getElementById("statLow").textContent  = Math.min(...lows).toFixed(4) + " SOL";
+    document.getElementById("statVol").textContent  = volData.reduce((s,d) => s+d.y, 0).toLocaleString();
+
+    const candlePlugin = {
+        id: 'candlestick',
+        beforeDatasetsDraw(chart) {
+            const { ctx, data, scales: { x, y } } = chart;
+            const ds = data.datasets[0].data;
+            if (!ds || !ds.length) return;
+            const barWidth = Math.max(3, (x.width / ds.length) * 0.6);
+            ds.forEach(d => {
+                const xPos = x.getPixelForValue(d.x);
+                const oY = y.getPixelForValue(d.o);
+                const cY = y.getPixelForValue(d.c);
+                const hY = y.getPixelForValue(d.h);
+                const lY = y.getPixelForValue(d.l);
+                const bull = d.c >= d.o;
+                const color = bull ? "#14F195" : "#ef4444";
+                ctx.save();
+                ctx.strokeStyle = color;
+                ctx.fillStyle = bull ? "rgba(20,241,149,0.85)" : "rgba(239,68,68,0.85)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(xPos, hY);
+                ctx.lineTo(xPos, Math.min(oY, cY));
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(xPos, lY);
+                ctx.lineTo(xPos, Math.max(oY, cY));
+                ctx.stroke();
+                const bodyH = Math.max(1, Math.abs(cY - oY));
+                ctx.fillRect(xPos - barWidth/2, Math.min(oY, cY), barWidth, bodyH);
+                ctx.strokeRect(xPos - barWidth/2, Math.min(oY, cY), barWidth, bodyH);
+                ctx.restore();
+            });
+        }
+    };
 
     priceChart = new Chart(document.getElementById("priceChart"), {
-        type: 'line',
-        data: { datasets: [{ label:'Price', data:priceData, borderColor:lineColor, backgroundColor:fillColor, borderWidth:1.5, pointRadius:0, fill:true, tension:0.3 }] },
+        type: 'scatter',
+        data: { datasets: [{ label:'Price', data: candleData.map(d => ({ x:d.x, y:d.c })), pointRadius:0 }] },
         options: {
             responsive:true, maintainAspectRatio:false, animation:false,
-            interaction:{ intersect:false, mode:'index' },
-            plugins:{ legend:{ display:false }, tooltip:{ backgroundColor:'#1e293b', titleColor:'#94a3b8', bodyColor:'#e2e8f0', borderColor:'#334155', borderWidth:1, callbacks:{ label: ctx => ' ' + ctx.parsed.y.toFixed(4) + ' SOL' } } },
+            plugins:{
+                legend:{ display:false },
+                tooltip:{
+                    backgroundColor:'#1e293b', titleColor:'#94a3b8', bodyColor:'#e2e8f0', borderColor:'#334155', borderWidth:1,
+                    callbacks:{
+                        title: items => {
+                            const d = candleData[items[0].dataIndex];
+                            return d ? new Date(d.x).toLocaleTimeString() : '';
+                        },
+                        label: items => {
+                            const d = candleData[items.dataIndex];
+                            if (!d) return '';
+                            return [`O: ${d.o.toFixed(4)}  H: ${d.h.toFixed(4)}`, `L: ${d.l.toFixed(4)}  C: ${d.c.toFixed(4)}`];
+                        }
+                    }
+                },
+                candlestick: {}
+            },
             scales:{
-                x:{ type:'time', time:{ unit:'hour', displayFormats:{ hour:'HH:mm' } }, grid:{ color:'#1a2236' }, ticks:{ color:'#64748b', font:{ size:10 }, maxTicksLimit:7 } },
+                x:{ type:'time', time:{ unit:'hour', displayFormats:{ hour:'HH:mm' } }, grid:{ color:'#1a2236' }, ticks:{ color:'#64748b', font:{ size:10 }, maxTicksLimit:8 } },
                 y:{ position:'right', grid:{ color:'#1a2236' }, ticks:{ color:'#64748b', font:{ size:10 }, callback: v => v.toFixed(3) } }
             }
-        }
+        },
+        plugins: [candlePlugin]
     });
 
     volChart = new Chart(document.getElementById("volumeChart"), {
         type:'bar',
-        data:{ datasets:[{ label:'Vol', data:volData, backgroundColor:'rgba(153,69,255,0.35)', borderWidth:0, borderRadius:2 }] },
+        data:{ datasets:[{ label:'Vol', data:volData, backgroundColor: volData.map((_,i) => candleData[i] && candleData[i].c >= candleData[i].o ? 'rgba(20,241,149,0.4)' : 'rgba(239,68,68,0.4)'), borderWidth:0, borderRadius:1 }] },
         options:{
             responsive:true, maintainAspectRatio:false, animation:false,
             plugins:{ legend:{ display:false } },
