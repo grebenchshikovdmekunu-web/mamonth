@@ -634,28 +634,50 @@
 
     // ============ КОШЕЛЁК ============
     async function connectWallet() {
-        if (!window.solana || !window.solana.isPhantom) {
-            showToast("❌", "Phantom wallet not found. Please install it.", "error");
-            setTimeout(() => window.open("https://phantom.app", "_blank"), 1500);
-            return;
-        }
-
-        try {
-            const response = await window.solana.connect();
-            walletPubkey = response.publicKey.toString();
-            walletConnected = true;
-
-            document.getElementById("connectBtn").style.display = "none";
-            document.getElementById("walletInfo").style.display = "flex";
-            document.getElementById("walletAddress").textContent =
-                walletPubkey.slice(0, 4) + "..." + walletPubkey.slice(-4);
-
-            showToast("✅", "Wallet connected!", "success");
-            loadPortfolio();
-        } catch (err) {
-            showToast("❌", "Connection rejected", "error");
-        }
+    // Если Phantom недоступен — включаем демо режим
+    if (!window.solana || !window.solana.isPhantom) {
+        enableDemoMode();
+        return;
     }
+
+    try {
+        const response = await window.solana.connect();
+        walletPubkey = response.publicKey.toString();
+        walletConnected = true;
+
+        document.getElementById("connectBtn").style.display = "none";
+        document.getElementById("walletInfo").style.display = "flex";
+        document.getElementById("walletAddress").textContent =
+            walletPubkey.slice(0, 4) + "..." + walletPubkey.slice(-4);
+
+        showToast("✅", "Wallet connected!", "success");
+        loadPortfolio();
+    } catch (err) {
+        // Если отклонил — тоже включаем демо
+        enableDemoMode();
+    }
+}
+
+function enableDemoMode() {
+    walletConnected = true;
+    walletPubkey = "DEMO1111111111111111111111111111111111111111";
+
+    document.getElementById("connectBtn").style.display = "none";
+    document.getElementById("walletInfo").style.display = "flex";
+    document.getElementById("walletAddress").textContent = "Demo Mode";
+
+    // Меняем цвет dot на жёлтый для демо
+    document.querySelector(".wallet-dot").style.background = "#f59e0b";
+
+    showToast("🎮", "Demo mode — wallet simulated", "success");
+    
+    // Добавляем демо портфолио
+    portfolio = [
+        { ...demoAssets[0], fractions: 10 },
+        { ...demoAssets[2], fractions: 5 },
+    ];
+    loadPortfolio();
+}
 
     // ============ МАРКЕТПЛЕЙС ============
     function renderAssets() {
@@ -888,31 +910,17 @@
 
     // ============ UI HELPERS ============
     function showTab(tab) {
-        document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-        document.getElementById(tab).classList.add("active");
-        event.target.classList.add("active");
-    }
-
-    let toastTimer;
-    function showToast(icon, msg, type) {
-        const toast = document.getElementById("toast");
-        document.getElementById("toastIcon").textContent = icon;
-        document.getElementById("toastMsg").textContent = msg;
-        toast.className = `toast ${type} show`;
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => toast.classList.remove("show"), 3500);
-    }
-
-    // ============ ИНИЦИАЛИЗАЦИЯ ============
-    renderAssets();
-
-    // Автоподключение если Phantom уже был подключён
-    window.addEventListener("load", async () => {
-        if (window.solana?.isPhantom && window.solana.isConnected) {
-            await connectWallet();
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.getElementById(tab).classList.add("active");
+    
+    // Находим нужный таб по data атрибуту
+    document.querySelectorAll(".tab").forEach(t => {
+        if (t.getAttribute("onclick").includes(tab)) {
+            t.classList.add("active");
         }
     });
+}
 </script>
 </body>
 </html>
