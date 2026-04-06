@@ -597,41 +597,52 @@
 
     // Демо активы (в реальном приложении грузятся из блокчейна)
     const demoAssets = [
-        {
-            id: 1,
-            name: "Almaty Tower — Floor 12",
-            description: "Commercial office space in the heart of Almaty. 450 sqm, fully leased to IT company.",
-            totalValue: 500,
-            totalFractions: 1000,
-            availableFractions: 650,
-            pricePerFraction: 0.5,
-            yield: "11.2%",
-            icon: "🏢"
-        },
-        {
-            id: 2,
-            name: "Kazakhstan Gov Bond 2026",
-            description: "Tokenized government bond with guaranteed 9.5% annual return. Maturity: Dec 2026.",
-            totalValue: 200,
-            totalFractions: 500,
-            availableFractions: 280,
-            pricePerFraction: 0.4,
-            yield: "9.5%",
-            icon: "📜"
-        },
-        {
-            id: 3,
-            name: "Solar Farm — Shymkent",
-            description: "Fractional ownership in 5MW solar energy plant. Revenue from electricity sales.",
-            totalValue: 800,
-            totalFractions: 2000,
-            availableFractions: 1850,
-            pricePerFraction: 0.4,
-            yield: "14.8%",
-            icon: "☀️"
-        }
-    ];
-
+    {
+        id: 1,
+        name: "IT Support Group — HQ Almaty",
+        description: "Commercial office space of leading IT company in Almaty. 1200 sqm, Alatau district. Fully operational, stable rental income.",
+        totalValue: 850,
+        totalFractions: 1000,
+        availableFractions: 620,
+        pricePerFraction: 0.85,
+        yield: "13.2%",
+        icon: "💻",
+        website: "https://itsupportgroup.kz",
+        twitter: "@itsupportkz",
+        telegram: "@itsupportgroup",
+        category: "real-estate"
+    },
+    {
+        id: 2,
+        name: "DOSTI Residential Complex",
+        description: "Premium residential complex in the heart of Almaty. 48 apartments, high occupancy rate. Rental yield distributed monthly to investors.",
+        totalValue: 1200,
+        totalFractions: 2000,
+        availableFractions: 1450,
+        pricePerFraction: 0.6,
+        yield: "11.8%",
+        icon: "🏘️",
+        website: "https://dosti.kz",
+        twitter: "@dostikz",
+        telegram: "@dostialmaty",
+        category: "real-estate"
+    },
+    {
+        id: 3,
+        name: "Talgo Kazakhstan — Rail Bond",
+        description: "Tokenized corporate bond from Talgo Kazakhstan. High-speed rail manufacturer operating in Almaty. Fixed 10.5% annual return, maturity 2027.",
+        totalValue: 500,
+        totalFractions: 1000,
+        availableFractions: 780,
+        pricePerFraction: 0.5,
+        yield: "10.5%",
+        icon: "🚄",
+        website: "https://talgo.kz",
+        twitter: "@talgokz",
+        telegram: "@talgokazakhstan",
+        category: "bonds"
+    }
+];
     // ============ КОШЕЛЁК ============
     async function connectWallet() {
     // Если Phantom недоступен — включаем демо режим
