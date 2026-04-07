@@ -1,301 +1,343 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mamonth — Tokenized Assets on Solana</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.1.1/dist/chartjs-chart-financial.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', -apple-system, sans-serif; background: #0a0a0f; color: #e2e8f0; min-height: 100vh; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mamonth — Tokenized Assets on Solana</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#0a0a0f;color:#e2e8f0;min-height:100vh;}
 
-        nav { display: flex; justify-content: space-between; align-items: center; padding: 16px 32px; border-bottom: 1px solid #1e293b; background: rgba(10,10,15,0.97); position: sticky; top: 0; z-index: 100; }
-        .logo { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #9945FF, #14F195); -webkit-background-clip: text; -webkit-text-fill-color: transparent; cursor: pointer; }
-        .nav-right { display: flex; align-items: center; gap: 12px; }
-        .network-badge { background: #14F19520; color: #14F195; border: 1px solid #14F19540; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        #connectBtn { background: linear-gradient(135deg, #9945FF, #7c3aed); color: white; border: none; padding: 9px 20px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; }
-        #walletInfo { display: none; align-items: center; gap: 8px; background: #1e293b; padding: 7px 14px; border-radius: 8px; font-size: 13px; }
-        .wallet-dot { width: 7px; height: 7px; background: #14F195; border-radius: 50%; }
+/* NAV */
+nav{display:flex;justify-content:space-between;align-items:center;padding:16px 32px;border-bottom:1px solid #1e293b;background:rgba(10,10,15,0.97);position:sticky;top:0;z-index:100;}
+.logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,#9945FF,#14F195);-webkit-background-clip:text;-webkit-text-fill-color:transparent;cursor:pointer;}
+.nav-right{display:flex;align-items:center;gap:12px;}
+.network-badge{background:#14F19520;color:#14F195;border:1px solid #14F19540;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+.demo-badge{background:#f59e0b20;color:#f59e0b;border:1px solid #f59e0b40;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:600;display:none;}
+#connectBtn{background:linear-gradient(135deg,#9945FF,#7c3aed);color:white;border:none;padding:9px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;}
+#walletInfo{display:none;align-items:center;gap:8px;background:#1e293b;padding:7px 14px;border-radius:8px;font-size:13px;}
+.wallet-dot{width:7px;height:7px;background:#14F195;border-radius:50%;}
+.balance-pill{background:#9945FF20;color:#9945FF;border:1px solid #9945FF40;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;display:none;}
 
-        .view { display: none; }
-        .view.active { display: block; }
+/* CONNECT MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:500;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.connect-modal{background:#111827;border:1px solid #1e293b;border-radius:20px;padding:36px;width:380px;max-width:92vw;text-align:center;}
+.connect-modal h2{font-size:22px;font-weight:700;margin-bottom:8px;}
+.connect-modal p{font-size:14px;color:#64748b;margin-bottom:28px;line-height:1.5;}
+.connect-phantom-btn{width:100%;padding:14px;background:linear-gradient(135deg,#9945FF,#7c3aed);color:white;border:none;border-radius:12px;cursor:pointer;font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:10px;}
+.connect-phantom-btn:hover{opacity:0.88;}
+.divider{display:flex;align-items:center;gap:12px;margin:4px 0 12px;color:#334155;font-size:12px;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#1e293b;}
+.connect-demo-btn{width:100%;padding:14px;background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:12px;cursor:pointer;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;}
+.connect-demo-btn:hover{background:#273448;border-color:#9945FF60;}
+.demo-balance-hint{font-size:12px;color:#64748b;margin-top:10px;}
 
-        .hero { text-align: center; padding: 60px 32px 48px; }
-        .hero h1 { font-size: 48px; font-weight: 800; line-height: 1.15; margin-bottom: 16px; }
-        .hero h1 span { background: linear-gradient(135deg, #9945FF, #14F195); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .hero p { font-size: 17px; color: #94a3b8; max-width: 520px; margin: 0 auto; line-height: 1.6; }
-        .stats { display: flex; justify-content: center; gap: 48px; margin-top: 40px; }
-        .stat { text-align: center; }
-        .stat-value { font-size: 26px; font-weight: 700; color: #14F195; }
-        .stat-label { font-size: 12px; color: #64748b; margin-top: 4px; }
+/* VIEWS */
+.view{display:none;}
+.view.active{display:block;}
 
-        .tabs { display: flex; justify-content: center; gap: 8px; padding: 32px 32px 28px; }
-        .tab { padding: 9px 20px; border-radius: 8px; border: 1px solid #1e293b; background: transparent; color: #64748b; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; }
-        .tab.active { background: linear-gradient(135deg, #9945FF20, #14F19520); border-color: #9945FF60; color: #e2e8f0; }
+/* HERO */
+.hero{text-align:center;padding:60px 32px 48px;}
+.hero h1{font-size:48px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h1 span{background:linear-gradient(135deg,#9945FF,#14F195);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero p{font-size:17px;color:#94a3b8;max-width:520px;margin:0 auto;line-height:1.6;}
+.stats{display:flex;justify-content:center;gap:48px;margin-top:40px;}
+.stat{text-align:center;}
+.stat-value{font-size:26px;font-weight:700;color:#14F195;}
+.stat-label{font-size:12px;color:#64748b;margin-top:4px;}
 
-        .section { display: none; padding: 0 32px 48px; max-width: 1100px; margin: 0 auto; }
-        .section.active { display: block; }
-        .section-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+.tabs{display:flex;justify-content:center;gap:8px;padding:32px 32px 28px;}
+.tab{padding:9px 20px;border-radius:8px;border:1px solid #1e293b;background:transparent;color:#64748b;cursor:pointer;font-size:13px;font-weight:600;transition:all 0.2s;}
+.tab.active{background:linear-gradient(135deg,#9945FF20,#14F19520);border-color:#9945FF60;color:#e2e8f0;}
 
-        .assets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.section{display:none;padding:0 32px 48px;max-width:1100px;margin:0 auto;}
+.section.active{display:block;}
+.section-title{font-size:22px;font-weight:700;margin-bottom:20px;}
 
-        .asset-card { background: #111827; border: 1px solid #1e293b; border-radius: 14px; overflow: hidden; transition: all 0.2s; cursor: pointer; }
-        .asset-card:hover { border-color: #9945FF60; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(153,69,255,0.12); }
-        .asset-img { width: 100%; height: 140px; background: linear-gradient(135deg, #1e1b4b, #312e81); display: flex; align-items: center; justify-content: center; font-size: 44px; }
-        .asset-body { padding: 16px; }
-        .asset-name { font-size: 16px; font-weight: 700; margin-bottom: 5px; }
-        .asset-desc { font-size: 12px; color: #64748b; margin-bottom: 12px; line-height: 1.5; }
-        .asset-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-        .asset-stat { background: #0f172a; border-radius: 7px; padding: 9px; }
-        .asset-stat-label { font-size: 10px; color: #64748b; margin-bottom: 2px; }
-        .asset-stat-value { font-size: 13px; font-weight: 600; }
-        .progress-bar { background: #1e293b; border-radius: 3px; height: 5px; margin-bottom: 12px; overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, #9945FF, #14F195); border-radius: 3px; }
-        .progress-label { display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 5px; }
-        .trade-btn { width: 100%; padding: 11px; background: linear-gradient(135deg, #9945FF, #7c3aed); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; }
+.assets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+.asset-card{background:#111827;border:1px solid #1e293b;border-radius:14px;overflow:hidden;transition:all 0.2s;cursor:pointer;}
+.asset-card:hover{border-color:#9945FF60;transform:translateY(-2px);box-shadow:0 8px 24px rgba(153,69,255,0.12);}
+.asset-img{width:100%;height:140px;background:linear-gradient(135deg,#1e1b4b,#312e81);display:flex;align-items:center;justify-content:center;font-size:44px;}
+.asset-body{padding:16px;}
+.asset-name{font-size:16px;font-weight:700;margin-bottom:5px;}
+.asset-desc{font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.5;}
+.asset-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.asset-stat{background:#0f172a;border-radius:7px;padding:9px;}
+.asset-stat-label{font-size:10px;color:#64748b;margin-bottom:2px;}
+.asset-stat-value{font-size:13px;font-weight:600;}
+.progress-bar{background:#1e293b;border-radius:3px;height:5px;margin-bottom:12px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,#9945FF,#14F195);border-radius:3px;}
+.progress-label{display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-bottom:5px;}
+.trade-btn{width:100%;padding:11px;background:linear-gradient(135deg,#9945FF,#7c3aed);color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;}
 
-        .form-card { background: #111827; border: 1px solid #1e293b; border-radius: 14px; padding: 28px; max-width: 540px; }
-        .form-group { margin-bottom: 18px; }
-        .form-group label { display: block; font-size: 11px; font-weight: 600; color: #94a3b8; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-group input, .form-group textarea, .form-group select { width: 100%; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 11px 14px; color: #e2e8f0; font-size: 13px; outline: none; transition: border-color 0.2s; }
-        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: #9945FF; }
-        .form-group textarea { resize: vertical; min-height: 75px; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        .submit-btn { width: 100%; padding: 13px; background: linear-gradient(135deg, #9945FF, #14F195); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 700; margin-top: 6px; }
+/* FORM */
+.form-card{background:#111827;border:1px solid #1e293b;border-radius:14px;padding:28px;max-width:540px;}
+.form-group{margin-bottom:18px;}
+.form-group label{display:block;font-size:11px;font-weight:600;color:#94a3b8;margin-bottom:7px;text-transform:uppercase;letter-spacing:0.5px;}
+.form-group input,.form-group textarea,.form-group select{width:100%;background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:11px 14px;color:#e2e8f0;font-size:13px;outline:none;transition:border-color 0.2s;}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:#9945FF;}
+.form-group textarea{resize:vertical;min-height:75px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.submit-btn{width:100%;padding:13px;background:linear-gradient(135deg,#9945FF,#14F195);color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;margin-top:6px;}
 
-        .portfolio-card { background: #111827; border: 1px solid #1e293b; border-radius: 14px; padding: 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .portfolio-left { display: flex; align-items: center; gap: 14px; }
-        .portfolio-icon { width: 44px; height: 44px; background: linear-gradient(135deg, #9945FF20, #14F19520); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-        .portfolio-name { font-size: 15px; font-weight: 600; }
-        .portfolio-fractions { font-size: 12px; color: #64748b; margin-top: 2px; }
-        .portfolio-value { font-size: 17px; font-weight: 700; color: #14F195; }
-        .empty-state { text-align: center; padding: 50px 20px; color: #64748b; }
-        .empty-state .empty-icon { font-size: 44px; margin-bottom: 14px; }
+/* PORTFOLIO */
+.portfolio-card{background:#111827;border:1px solid #1e293b;border-radius:14px;padding:20px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+.portfolio-left{display:flex;align-items:center;gap:14px;}
+.portfolio-icon{width:44px;height:44px;background:linear-gradient(135deg,#9945FF20,#14F19520);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;}
+.portfolio-name{font-size:15px;font-weight:600;}
+.portfolio-fractions{font-size:12px;color:#64748b;margin-top:2px;}
+.portfolio-value{font-size:17px;font-weight:700;color:#14F195;}
+.empty-state{text-align:center;padding:50px 20px;color:#64748b;}
+.empty-state .empty-icon{font-size:44px;margin-bottom:14px;}
 
-        #tradingView { background: #0a0a0f; }
-        .trading-header { display: flex; align-items: center; gap: 16px; padding: 14px 24px; border-bottom: 1px solid #1e293b; background: #0d1117; flex-wrap: wrap; }
-        .back-btn { background: #1e293b; border: none; color: #94a3b8; padding: 7px 14px; border-radius: 7px; cursor: pointer; font-size: 12px; font-weight: 600; }
-        .back-btn:hover { background: #334155; color: #e2e8f0; }
-        .trading-asset-info { display: flex; align-items: center; gap: 10px; }
-        .trading-asset-icon { font-size: 26px; }
-        .trading-asset-name { font-size: 17px; font-weight: 700; }
-        .trading-asset-category { font-size: 11px; color: #64748b; }
-        .trading-price { margin-left: auto; text-align: right; }
-        .trading-price-value { font-size: 20px; font-weight: 700; }
-        .trading-price-change { font-size: 12px; font-weight: 600; }
-        .price-up { color: #14F195; }
-        .price-down { color: #ef4444; }
+/* TRADING VIEW */
+#tradingView{background:#0a0a0f;}
+.trading-header{display:flex;align-items:center;gap:16px;padding:14px 24px;border-bottom:1px solid #1e293b;background:#0d1117;flex-wrap:wrap;}
+.back-btn{background:#1e293b;border:none;color:#94a3b8;padding:7px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;}
+.back-btn:hover{background:#334155;color:#e2e8f0;}
+.trading-asset-info{display:flex;align-items:center;gap:10px;}
+.trading-asset-icon{font-size:26px;}
+.trading-asset-name{font-size:17px;font-weight:700;}
+.trading-asset-category{font-size:11px;color:#64748b;}
+.trading-price{margin-left:auto;text-align:right;}
+.trading-price-value{font-size:20px;font-weight:700;}
+.trading-price-change{font-size:12px;font-weight:600;}
+.price-up{color:#14F195;}
+.price-down{color:#ef4444;}
 
-        .trading-body { display: grid; grid-template-columns: 1fr 320px; min-height: calc(100vh - 120px); }
+.trading-body{display:grid;grid-template-columns:1fr 320px;min-height:calc(100vh - 120px);}
+.chart-section{padding:16px 20px;border-right:1px solid #1e293b;display:flex;flex-direction:column;}
+.timeframe-btns{display:flex;gap:4px;margin-bottom:12px;}
+.tf-btn{background:transparent;border:1px solid #1e293b;color:#64748b;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:11px;font-weight:600;}
+.tf-btn.active{background:#9945FF20;border-color:#9945FF60;color:#9945FF;}
+.chart-stats{display:flex;gap:20px;margin-bottom:10px;flex-wrap:wrap;}
+.chart-stat-label{font-size:10px;color:#64748b;}
+.chart-stat-value{font-size:13px;font-weight:600;margin-top:1px;}
 
-        .chart-section { padding: 16px 20px; border-right: 1px solid #1e293b; display: flex; flex-direction: column; }
-        .timeframe-btns { display: flex; gap: 4px; margin-bottom: 12px; }
-        .tf-btn { background: transparent; border: 1px solid #1e293b; color: #64748b; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: 600; }
-        .tf-btn.active { background: #9945FF20; border-color: #9945FF60; color: #9945FF; }
-        .chart-stats { display: flex; gap: 20px; margin-bottom: 10px; flex-wrap: wrap; }
-        .chart-stat-label { font-size: 10px; color: #64748b; }
-        .chart-stat-value { font-size: 13px; font-weight: 600; margin-top: 1px; }
-        .chart-container { flex: 1; position: relative; height: 320px; }
-        .volume-container { height: 70px; position: relative; margin-top: 6px; }
+/* CHART WRAPPER — Y axis drag zone */
+.chart-wrapper{flex:1;display:flex;position:relative;min-height:300px;}
+.chart-canvas-area{flex:1;position:relative;}
+.y-axis-drag{width:52px;background:#0d1117;border-left:1px solid #1e293b;cursor:ns-resize;display:flex;align-items:center;justify-content:center;user-select:none;position:relative;}
+.y-axis-drag-hint{font-size:9px;color:#334155;writing-mode:vertical-rl;letter-spacing:1px;pointer-events:none;}
+.y-axis-drag:hover{background:#1e293b;}
+.y-axis-drag.dragging{background:#1e293b;border-left-color:#9945FF60;}
+.zoom-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:18px;opacity:0.25;pointer-events:none;}
 
-        .order-panel { padding: 16px; overflow-y: auto; background: #0d1117; border-left: 1px solid #1e293b; }
-        .order-tabs { display: flex; gap: 3px; margin-bottom: 14px; background: #1e293b; border-radius: 7px; padding: 3px; }
-        .order-tab { flex: 1; padding: 7px; border: none; background: transparent; color: #64748b; cursor: pointer; font-size: 12px; font-weight: 700; border-radius: 5px; }
-        .order-tab.active-long { background: #14F19530; color: #14F195; }
-        .order-tab.active-short { background: #ef444430; color: #ef4444; }
-        .order-label { font-size: 10px; color: #64748b; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .order-input { width: 100%; background: #1e293b; border: 1px solid #334155; border-radius: 7px; padding: 9px 11px; color: #e2e8f0; font-size: 13px; outline: none; margin-bottom: 12px; }
-        .order-input:focus { border-color: #9945FF; }
-        .leverage-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-        .leverage-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
-        .leverage-slider { flex: 1; accent-color: #9945FF; }
-        .leverage-value { font-size: 13px; font-weight: 700; color: #9945FF; min-width: 28px; text-align: right; }
-        .order-summary { background: #1e293b; border-radius: 7px; padding: 10px; margin-bottom: 12px; }
-        .order-summary-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; }
-        .order-summary-row:last-child { margin-bottom: 0; }
-        .order-summary-label { color: #64748b; }
-        .order-summary-value { font-weight: 600; }
-        .long-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #14F195, #0ea572); color: #042c1e; border: none; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
-        .short-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
-        .asset-links { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-        .asset-link { font-size: 11px; color: #64748b; text-decoration: none; background: #1e293b; padding: 4px 8px; border-radius: 5px; }
-        .asset-link:hover { color: #e2e8f0; }
-        .positions-title { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; margin-top: 14px; }
-        .position-card { background: #1e293b; border-radius: 7px; padding: 9px 10px; margin-bottom: 7px; }
-        .position-header { display: flex; justify-content: space-between; margin-bottom: 3px; }
-        .position-type { font-size: 11px; font-weight: 700; }
-        .position-type.long { color: #14F195; }
-        .position-type.short { color: #ef4444; }
-        .position-pnl { font-size: 11px; font-weight: 700; }
-        .position-details { font-size: 10px; color: #64748b; }
+.volume-container{height:70px;position:relative;margin-top:6px;}
 
-        .toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 9999; max-width: 300px; }
-        .toast.show { transform: translateY(0); opacity: 1; }
-        .toast.success { border-color: #14F19540; }
-        .toast.error { border-color: #ef444440; }
-    </style>
+/* ORDER PANEL */
+.order-panel{padding:16px;overflow-y:auto;background:#0d1117;border-left:1px solid #1e293b;}
+.order-tabs{display:flex;gap:3px;margin-bottom:14px;background:#1e293b;border-radius:7px;padding:3px;}
+.order-tab{flex:1;padding:7px;border:none;background:transparent;color:#64748b;cursor:pointer;font-size:12px;font-weight:700;border-radius:5px;}
+.order-tab.active-long{background:#14F19530;color:#14F195;}
+.order-tab.active-short{background:#ef444430;color:#ef4444;}
+.order-label{font-size:10px;color:#64748b;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;}
+.order-input{width:100%;background:#1e293b;border:1px solid #334155;border-radius:7px;padding:9px 11px;color:#e2e8f0;font-size:13px;outline:none;margin-bottom:12px;}
+.order-input:focus{border-color:#9945FF;}
+.leverage-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.leverage-label{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;}
+.leverage-slider{flex:1;accent-color:#9945FF;}
+.leverage-value{font-size:13px;font-weight:700;color:#9945FF;min-width:28px;text-align:right;}
+.order-summary{background:#1e293b;border-radius:7px;padding:10px;margin-bottom:12px;}
+.order-summary-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px;}
+.order-summary-row:last-child{margin-bottom:0;}
+.order-summary-label{color:#64748b;}
+.order-summary-value{font-weight:600;}
+.long-btn{width:100%;padding:12px;background:linear-gradient(135deg,#14F195,#0ea572);color:#042c1e;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:700;margin-bottom:6px;}
+.short-btn{width:100%;padding:12px;background:linear-gradient(135deg,#ef4444,#dc2626);color:white;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:700;margin-bottom:6px;}
+.asset-links{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.asset-link{font-size:11px;color:#64748b;text-decoration:none;background:#1e293b;padding:4px 8px;border-radius:5px;}
+.asset-link:hover{color:#e2e8f0;}
+.positions-title{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;margin-top:14px;}
+.position-card{background:#1e293b;border-radius:7px;padding:9px 10px;margin-bottom:7px;}
+.position-header{display:flex;justify-content:space-between;margin-bottom:3px;}
+.position-type{font-size:11px;font-weight:700;}
+.position-type.long{color:#14F195;}
+.position-type.short{color:#ef4444;}
+.position-pnl{font-size:11px;font-weight:700;}
+.position-details{font-size:10px;color:#64748b;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;transform:translateY(100px);opacity:0;transition:all 0.3s;z-index:9999;max-width:300px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-color:#14F19540;}
+.toast.error{border-color:#ef444440;}
+</style>
 </head>
 <body>
 
+<!-- CONNECT MODAL -->
+<div class="modal-overlay" id="connectModal">
+  <div class="connect-modal">
+    <div style="font-size:40px;margin-bottom:12px;">🦣</div>
+    <h2>Connect to Mamonth</h2>
+    <p>Trade tokenized real-world assets on Solana. Connect your wallet or try with a demo account.</p>
+    <button class="connect-phantom-btn" onclick="connectPhantom()">
+      <span style="font-size:20px;">👻</span> Connect Phantom
+    </button>
+    <div class="divider">or</div>
+    <button class="connect-demo-btn" onclick="connectDemo()">
+      🎮 Try Demo Account
+    </button>
+    <div class="demo-balance-hint">Demo includes $10,000 virtual USDC — no real funds needed</div>
+  </div>
+</div>
+
+<!-- NAV -->
 <nav>
-    <div class="logo" onclick="goHome()">🦣 Mamonth</div>
-    <div class="nav-right">
-        <div class="network-badge">● Devnet</div>
-        <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
-        <div id="walletInfo">
-            <div class="wallet-dot"></div>
-            <span id="walletAddress"></span>
-        </div>
+  <div class="logo" onclick="goHome()">🦣 Mamonth</div>
+  <div class="nav-right">
+    <div class="network-badge">● Devnet</div>
+    <div class="demo-badge" id="demoBadge">🎮 Demo</div>
+    <div class="balance-pill" id="balancePill"></div>
+    <button id="connectBtn" onclick="showConnectModal()">Connect Wallet</button>
+    <div id="walletInfo">
+      <div class="wallet-dot"></div>
+      <span id="walletAddress"></span>
     </div>
+  </div>
 </nav>
 
 <!-- MAIN VIEW -->
 <div id="mainView" class="view active">
-    <div class="hero">
-        <h1>Invest in <span>Real Assets</span><br>Like a Mamonth</h1>
-        <p>Buy fractional ownership of real estate, bonds and commodities — tokenized on Solana. Big moves, small entry.</p>
-        <div class="stats">
-            <div class="stat"><div class="stat-value">$2.4M</div><div class="stat-label">Total Value Locked</div></div>
-            <div class="stat"><div class="stat-value">3</div><div class="stat-label">Active Assets</div></div>
-            <div class="stat"><div class="stat-value">12.4%</div><div class="stat-label">Avg. Annual Yield</div></div>
-        </div>
+  <div class="hero">
+    <h1>Invest in <span>Real Assets</span><br>Like a Mamonth</h1>
+    <p>Buy fractional ownership of real estate, bonds and commodities — tokenized on Solana. Big moves, small entry.</p>
+    <div class="stats">
+      <div class="stat"><div class="stat-value">$2.4M</div><div class="stat-label">Total Value Locked</div></div>
+      <div class="stat"><div class="stat-value">3</div><div class="stat-label">Active Assets</div></div>
+      <div class="stat"><div class="stat-value">12.4%</div><div class="stat-label">Avg. Annual Yield</div></div>
     </div>
-
-    <div class="tabs">
-        <button class="tab active" onclick="showTab('marketplace',this)">🏪 Marketplace</button>
-        <button class="tab" onclick="showTab('create',this)">➕ List Asset</button>
-        <button class="tab" onclick="showTab('portfolio',this)">💼 My Portfolio</button>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('marketplace',this)">🏪 Marketplace</button>
+    <button class="tab" onclick="showTab('create',this)">➕ List Asset</button>
+    <button class="tab" onclick="showTab('portfolio',this)">💼 My Portfolio</button>
+  </div>
+  <div id="marketplace" class="section active">
+    <div class="section-title">Available Assets</div>
+    <div class="assets-grid" id="assetsGrid"></div>
+  </div>
+  <div id="create" class="section">
+    <div class="section-title">Tokenize Your Asset</div>
+    <div class="form-card">
+      <div class="form-group"><label>Asset Name</label><input type="text" id="assetName" placeholder="e.g. Almaty Business Center"></div>
+      <div class="form-group"><label>Description</label><textarea id="assetDesc" placeholder="Describe the asset..."></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Total Value (SOL)</label><input type="number" id="assetValue" placeholder="1000"></div>
+        <div class="form-group"><label>Total Fractions</label><input type="number" id="assetFractions" placeholder="1000"></div>
+      </div>
+      <div class="form-group"><label>Price Per Fraction (SOL)</label><input type="number" id="assetPrice" placeholder="1" step="0.001"></div>
+      <div style="border-top:1px solid #1e293b;margin:20px 0 16px;"></div>
+      <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">🔗 Links & Social</div>
+      <div class="form-group"><label>Official Website</label><input type="url" id="assetWebsite" placeholder="https://yourcompany.com"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Twitter / X</label><input type="text" id="assetTwitter" placeholder="@handle"></div>
+        <div class="form-group"><label>Telegram</label><input type="text" id="assetTelegram" placeholder="@channel"></div>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="assetCategory">
+          <option value="real-estate">🏢 Real Estate</option>
+          <option value="bonds">📜 Bonds</option>
+          <option value="energy">⚡ Energy</option>
+          <option value="commodities">🏭 Commodities</option>
+          <option value="other">🔷 Other</option>
+        </select>
+      </div>
+      <button class="submit-btn" onclick="createAsset()">🚀 Tokenize Asset</button>
     </div>
-
-    <div id="marketplace" class="section active">
-        <div class="section-title">Available Assets</div>
-        <div class="assets-grid" id="assetsGrid"></div>
-    </div>
-
-    <div id="create" class="section">
-        <div class="section-title">Tokenize Your Asset</div>
-        <div class="form-card">
-            <div class="form-group"><label>Asset Name</label><input type="text" id="assetName" placeholder="e.g. Almaty Business Center"></div>
-            <div class="form-group"><label>Description</label><textarea id="assetDesc" placeholder="Describe the asset..."></textarea></div>
-            <div class="form-row">
-                <div class="form-group"><label>Total Value (SOL)</label><input type="number" id="assetValue" placeholder="1000"></div>
-                <div class="form-group"><label>Total Fractions</label><input type="number" id="assetFractions" placeholder="1000"></div>
-            </div>
-            <div class="form-group"><label>Price Per Fraction (SOL)</label><input type="number" id="assetPrice" placeholder="1" step="0.001"></div>
-            <div style="border-top:1px solid #1e293b;margin:20px 0 16px;"></div>
-            <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">🔗 Links & Social</div>
-            <div class="form-group"><label>Official Website</label><input type="url" id="assetWebsite" placeholder="https://yourcompany.com"></div>
-            <div class="form-row">
-                <div class="form-group"><label>Twitter / X</label><input type="text" id="assetTwitter" placeholder="@handle"></div>
-                <div class="form-group"><label>Telegram</label><input type="text" id="assetTelegram" placeholder="@channel"></div>
-            </div>
-            <div class="form-group">
-                <label>Category</label>
-                <select id="assetCategory">
-                    <option value="real-estate">🏢 Real Estate</option>
-                    <option value="bonds">📜 Bonds</option>
-                    <option value="energy">⚡ Energy</option>
-                    <option value="commodities">🏭 Commodities</option>
-                    <option value="other">🔷 Other</option>
-                </select>
-            </div>
-            <button class="submit-btn" onclick="createAsset()">🚀 Tokenize Asset</button>
-        </div>
-    </div>
-
-    <div id="portfolio" class="section">
-        <div class="section-title">My Investments</div>
-        <div id="portfolioContent"><div class="empty-state"><div class="empty-icon">💼</div><p>Connect wallet to see your investments</p></div></div>
-    </div>
+  </div>
+  <div id="portfolio" class="section">
+    <div class="section-title">My Investments</div>
+    <div id="portfolioContent"><div class="empty-state"><div class="empty-icon">💼</div><p>Connect wallet to see your investments</p></div></div>
+  </div>
 </div>
 
 <!-- TRADING VIEW -->
 <div id="tradingView" class="view">
-    <div class="trading-header">
-        <button class="back-btn" onclick="goHome()">← Back</button>
-        <div class="trading-asset-info">
-            <div class="trading-asset-icon" id="tvIcon"></div>
-            <div>
-                <div class="trading-asset-name" id="tvName"></div>
-                <div class="trading-asset-category" id="tvCategory"></div>
-            </div>
-        </div>
-        <div class="trading-price">
-            <div class="trading-price-value" id="tvPrice"></div>
-            <div class="trading-price-change" id="tvChange"></div>
-        </div>
+  <div class="trading-header">
+    <button class="back-btn" onclick="goHome()">← Back</button>
+    <div class="trading-asset-info">
+      <div class="trading-asset-icon" id="tvIcon"></div>
+      <div>
+        <div class="trading-asset-name" id="tvName"></div>
+        <div class="trading-asset-category" id="tvCategory"></div>
+      </div>
     </div>
-
-    <div class="trading-body">
-        <div class="chart-section">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                <div class="timeframe-btns">
-                    <button class="tf-btn active" onclick="setTf('1H',this)">1H</button>
-                    <button class="tf-btn" onclick="setTf('4H',this)">4H</button>
-                    <button class="tf-btn" onclick="setTf('1D',this)">1D</button>
-                    <button class="tf-btn" onclick="setTf('1W',this)">1W</button>
-                    <button class="tf-btn" onclick="setTf('1M',this)">1M</button>
-                </div>
-            </div>
-            <div class="chart-stats">
-                <div class="chart-stat"><div class="chart-stat-label">Open</div><div class="chart-stat-value" id="statOpen"></div></div>
-                <div class="chart-stat"><div class="chart-stat-label">High</div><div class="chart-stat-value price-up" id="statHigh"></div></div>
-                <div class="chart-stat"><div class="chart-stat-label">Low</div><div class="chart-stat-value price-down" id="statLow"></div></div>
-                <div class="chart-stat"><div class="chart-stat-label">Volume</div><div class="chart-stat-value" id="statVol"></div></div>
-            </div>
-            <div class="chart-container"><canvas id="priceChart"></canvas></div>
-            <div class="volume-container"><canvas id="volumeChart"></canvas></div>
-        </div>
-
-        <div class="order-panel">
-            <div class="asset-links" id="tvLinks"></div>
-
-            <div class="order-tabs">
-                <button class="order-tab active-long" id="longTab" onclick="setSide('long')">▲ LONG</button>
-                <button class="order-tab" id="shortTab" onclick="setSide('short')">▼ SHORT</button>
-            </div>
-
-            <div class="order-label">Amount (fractions)</div>
-            <input type="number" class="order-input" id="orderAmount" value="10" min="1" oninput="updateSummary()">
-
-            <div class="order-label">Order Type</div>
-            <select class="order-input" id="orderType" onchange="updateSummary()">
-                <option value="market">Market Order</option>
-                <option value="limit">Limit Order</option>
-            </select>
-
-            <div class="leverage-row">
-                <div class="leverage-label">Leverage</div>
-                <input type="range" class="leverage-slider" id="leverageSlider" min="1" max="10" value="1" step="1" oninput="updateLeverage(this.value)">
-                <div class="leverage-value" id="leverageVal">1x</div>
-            </div>
-
-            <div class="order-summary">
-                <div class="order-summary-row"><span class="order-summary-label">Price / fraction</span><span class="order-summary-value" id="sumPrice">—</span></div>
-                <div class="order-summary-row"><span class="order-summary-label">Position size</span><span class="order-summary-value" id="sumSize">—</span></div>
-                <div class="order-summary-row"><span class="order-summary-label">Leverage</span><span class="order-summary-value" id="sumLev">1x</span></div>
-                <div class="order-summary-row" style="border-top:1px solid #334155;padding-top:6px;margin-top:4px;"><span class="order-summary-label">Total cost</span><span class="order-summary-value" id="sumTotal" style="color:#14F195;">—</span></div>
-            </div>
-
-            <button class="long-btn" id="executeBtn" onclick="executeTrade()">Open Long Position</button>
-
-            <div class="positions-title">Open Positions</div>
-            <div id="positionsList"><div style="font-size:11px;color:#64748b;text-align:center;padding:12px 0;">No open positions</div></div>
-        </div>
+    <div class="trading-price">
+      <div class="trading-price-value" id="tvPrice"></div>
+      <div class="trading-price-change" id="tvChange"></div>
     </div>
+  </div>
+  <div class="trading-body">
+    <div class="chart-section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="timeframe-btns">
+          <button class="tf-btn active" onclick="setTf('1H',this)">1H</button>
+          <button class="tf-btn" onclick="setTf('4H',this)">4H</button>
+          <button class="tf-btn" onclick="setTf('1D',this)">1D</button>
+          <button class="tf-btn" onclick="setTf('1W',this)">1W</button>
+          <button class="tf-btn" onclick="setTf('1M',this)">1M</button>
+        </div>
+      </div>
+      <div class="chart-stats">
+        <div class="chart-stat"><div class="chart-stat-label">Open</div><div class="chart-stat-value" id="statOpen"></div></div>
+        <div class="chart-stat"><div class="chart-stat-label">High</div><div class="chart-stat-value price-up" id="statHigh"></div></div>
+        <div class="chart-stat"><div class="chart-stat-label">Low</div><div class="chart-stat-value price-down" id="statLow"></div></div>
+        <div class="chart-stat"><div class="chart-stat-label">Volume</div><div class="chart-stat-value" id="statVol"></div></div>
+      </div>
+      <div class="chart-wrapper">
+        <div class="chart-canvas-area"><canvas id="priceChart"></canvas></div>
+        <div class="y-axis-drag" id="yAxisDrag">
+          <div class="zoom-label">↕</div>
+          <div class="y-axis-drag-hint">DRAG TO ZOOM</div>
+        </div>
+      </div>
+      <div class="volume-container"><canvas id="volumeChart"></canvas></div>
+    </div>
+    <div class="order-panel">
+      <div class="asset-links" id="tvLinks"></div>
+      <div class="order-tabs">
+        <button class="order-tab active-long" id="longTab" onclick="setSide('long')">▲ LONG</button>
+        <button class="order-tab" id="shortTab" onclick="setSide('short')">▼ SHORT</button>
+      </div>
+      <div class="order-label">Amount (fractions)</div>
+      <input type="number" class="order-input" id="orderAmount" value="10" min="1" oninput="updateSummary()">
+      <div class="order-label">Order Type</div>
+      <select class="order-input" id="orderType" onchange="updateSummary()">
+        <option value="market">Market Order</option>
+        <option value="limit">Limit Order</option>
+      </select>
+      <div class="leverage-row">
+        <div class="leverage-label">Leverage</div>
+        <input type="range" class="leverage-slider" id="leverageSlider" min="1" max="10" value="1" step="1" oninput="updateLeverage(this.value)">
+        <div class="leverage-value" id="leverageVal">1x</div>
+      </div>
+      <div class="order-summary">
+        <div class="order-summary-row"><span class="order-summary-label">Price / fraction</span><span class="order-summary-value" id="sumPrice">—</span></div>
+        <div class="order-summary-row"><span class="order-summary-label">Position size</span><span class="order-summary-value" id="sumSize">—</span></div>
+        <div class="order-summary-row"><span class="order-summary-label">Leverage</span><span class="order-summary-value" id="sumLev">1x</span></div>
+        <div class="order-summary-row" style="border-top:1px solid #334155;padding-top:6px;margin-top:4px;"><span class="order-summary-label">Total cost</span><span class="order-summary-value" id="sumTotal" style="color:#14F195;">—</span></div>
+      </div>
+      <button class="long-btn" id="executeBtn" onclick="executeTrade()">Open Long Position</button>
+      <div class="positions-title">Open Positions</div>
+      <div id="positionsList"><div style="font-size:11px;color:#64748b;text-align:center;padding:12px 0;">No open positions</div></div>
+    </div>
+  </div>
 </div>
 
-<div class="toast" id="toast">
-    <span id="toastIcon" style="font-size:16px;"></span>
-    <span id="toastMsg"></span>
-</div>
+<div class="toast" id="toast"><span id="toastIcon" style="font-size:16px;"></span><span id="toastMsg"></span></div>
 
 <script>
 const PROGRAM_ID = "9GWa9HyP887TpVKAqk9qwd6TaCyVyULgARkEY4wCFDkm";
 let walletConnected = false;
 let walletPubkey = null;
+let isDemo = false;
+let demoBalance = 10000;
 let portfolio = [];
 let openPositions = [];
 let currentAsset = null;
@@ -305,383 +347,453 @@ let priceChart = null;
 let volChart = null;
 let liveInterval = null;
 let pnlInterval = null;
-
-const demoAssets = [
-    { id:1, name:"IT Support Group — HQ", description:"Commercial office space of leading IT company in Almaty. 1200 sqm, Alatau district. Fully operational, stable rental income.", totalValue:850, totalFractions:1000, availableFractions:620, pricePerFraction:0.85, yield:"13.2%", icon:"💻", website:"https://itsupportgroup.kz", twitter:"@itsupportkz", telegram:"@itsupportgroup", category:"Real Estate", basePrice:0.85 },
-    { id:2, name:"DOSTI Residential Complex", description:"Premium residential complex in the heart of Almaty. 48 apartments, high occupancy rate. Rental yield distributed monthly to investors.", totalValue:1200, totalFractions:2000, availableFractions:1450, pricePerFraction:0.6, yield:"11.8%", icon:"🏘️", website:"https://dosti.kz", twitter:"@dostikz", telegram:"@dostialmaty", category:"Real Estate", basePrice:0.6 },
-    { id:3, name:"Talgo Kazakhstan — Rail Bond", description:"Tokenized corporate bond from Talgo Kazakhstan. High-speed rail manufacturer operating in Almaty. Fixed 10.5% annual return, maturity 2027.", totalValue:500, totalFractions:1000, availableFractions:780, pricePerFraction:0.5, yield:"10.5%", icon:"🚄", website:"https://talgo.kz", twitter:"@talgokz", telegram:"@talgokazakhstan", category:"Bond", basePrice:0.5 }
-];
-
-function genCandleData(base, points, vol) {
-    const data = []; let price = base * 0.92; const now = Date.now();
-    for (let i = points; i >= 0; i--) {
-        const open = price;
-        const change = (Math.random() - 0.47) * vol;
-        const close = Math.max(base * 0.4, open + change);
-        const high = Math.max(open, close) + Math.random() * vol * 0.6;
-        const low  = Math.min(open, close) - Math.random() * vol * 0.6;
-        data.push({ x: now - i * 3600000, o: parseFloat(open.toFixed(5)), h: parseFloat(high.toFixed(5)), l: parseFloat(Math.max(low, base*0.3).toFixed(5)), c: parseFloat(close.toFixed(5)) });
-        price = close;
-    }
-    return data;
-}
-
-function genVolData(points) {
-    const data = []; const now = Date.now();
-    for (let i = points; i >= 0; i--) data.push({ x: now - i * 3600000, y: Math.floor(Math.random() * 600 + 80) });
-    return data;
-}
-
 let candleData = [];
 let currentCandle = null;
 
-async function connectWallet() {
-    if (!window.solana || !window.solana.isPhantom) { enableDemoMode(); return; }
-    try {
-        const r = await window.solana.connect();
-        walletPubkey = r.publicKey.toString(); walletConnected = true;
-        document.getElementById("connectBtn").style.display = "none";
-        document.getElementById("walletInfo").style.display = "flex";
-        document.getElementById("walletAddress").textContent = walletPubkey.slice(0,4)+"..."+walletPubkey.slice(-4);
-        showToast("✅","Wallet connected!","success"); loadPortfolio();
-    } catch(e) { enableDemoMode(); }
+// Y-axis zoom state
+let yZoom = 1.0;
+let yDragging = false;
+let yDragStartY = 0;
+let yDragStartZoom = 1.0;
+
+const demoAssets = [
+  {id:1,name:"IT Support Group — HQ",description:"Commercial office space of leading IT company in Almaty. 1200 sqm, Alatau district. Fully operational, stable rental income.",totalValue:850,totalFractions:1000,availableFractions:620,pricePerFraction:0.85,yield:"13.2%",icon:"💻",website:"https://itsupportgroup.kz",twitter:"@itsupportkz",telegram:"@itsupportgroup",category:"Real Estate",basePrice:0.85},
+  {id:2,name:"DOSTI Residential Complex",description:"Premium residential complex in the heart of Almaty. 48 apartments, high occupancy rate. Rental yield distributed monthly to investors.",totalValue:1200,totalFractions:2000,availableFractions:1450,pricePerFraction:0.6,yield:"11.8%",icon:"🏘️",website:"https://dosti.kz",twitter:"@dostikz",telegram:"@dostialmaty",category:"Real Estate",basePrice:0.6},
+  {id:3,name:"Talgo Kazakhstan — Rail Bond",description:"Tokenized corporate bond from Talgo Kazakhstan. High-speed rail manufacturer operating in Almaty. Fixed 10.5% annual return, maturity 2027.",totalValue:500,totalFractions:1000,availableFractions:780,pricePerFraction:0.5,yield:"10.5%",icon:"🚄",website:"https://talgo.kz",twitter:"@talgokz",telegram:"@talgokazakhstan",category:"Bond",basePrice:0.5}
+];
+
+// ---- CONNECT MODAL ----
+function showConnectModal() {
+  document.getElementById("connectModal").classList.add("show");
 }
 
-function enableDemoMode() {
-    walletConnected = true; walletPubkey = "DEMO";
+function hideConnectModal() {
+  document.getElementById("connectModal").classList.remove("show");
+}
+
+async function connectPhantom() {
+  hideConnectModal();
+  if (!window.solana || !window.solana.isPhantom) {
+    showToast("❌","Phantom not found. Install at phantom.app","error");
+    setTimeout(() => window.open("https://phantom.app","_blank"), 1500);
+    return;
+  }
+  try {
+    const r = await window.solana.connect();
+    walletPubkey = r.publicKey.toString();
+    walletConnected = true; isDemo = false;
     document.getElementById("connectBtn").style.display = "none";
     document.getElementById("walletInfo").style.display = "flex";
-    document.getElementById("walletAddress").textContent = "Demo Mode";
-    document.querySelector(".wallet-dot").style.background = "#f59e0b";
-    showToast("🎮","Demo mode active","success");
-    portfolio = [{ ...demoAssets[0], fractions:10 }, { ...demoAssets[2], fractions:5 }];
+    document.getElementById("walletAddress").textContent = walletPubkey.slice(0,4)+"..."+walletPubkey.slice(-4);
+    showToast("✅","Phantom connected!","success");
     loadPortfolio();
+  } catch(e) {
+    showToast("❌","Connection rejected","error");
+  }
 }
 
+function connectDemo() {
+  hideConnectModal();
+  walletConnected = true; isDemo = true;
+  walletPubkey = "DEMO";
+  document.getElementById("connectBtn").style.display = "none";
+  document.getElementById("walletInfo").style.display = "flex";
+  document.getElementById("walletAddress").textContent = "Demo Account";
+  document.querySelector(".wallet-dot").style.background = "#f59e0b";
+  document.getElementById("demoBadge").style.display = "block";
+  document.getElementById("balancePill").style.display = "block";
+  updateBalancePill();
+  showToast("🎮","Demo account — $10,000 virtual balance","success");
+  portfolio = [{...demoAssets[0],fractions:10},{...demoAssets[2],fractions:5}];
+  loadPortfolio();
+}
+
+function updateBalancePill() {
+  document.getElementById("balancePill").textContent = "$" + demoBalance.toLocaleString() + " USDC";
+}
+
+// ---- NAVIGATION ----
 function goHome() {
-    document.getElementById("mainView").classList.add("active");
-    document.getElementById("tradingView").classList.remove("active");
-    if (liveInterval) { clearInterval(liveInterval); liveInterval = null; }
-    if (pnlInterval) { clearInterval(pnlInterval); pnlInterval = null; }
-    if (priceChart) { priceChart.destroy(); priceChart = null; }
-    if (volChart) { volChart.destroy(); volChart = null; }
-    currentAsset = null;
+  document.getElementById("mainView").classList.add("active");
+  document.getElementById("tradingView").classList.remove("active");
+  if (liveInterval) { clearInterval(liveInterval); liveInterval = null; }
+  if (pnlInterval) { clearInterval(pnlInterval); pnlInterval = null; }
+  if (priceChart) { priceChart.destroy(); priceChart = null; }
+  if (volChart) { volChart.destroy(); volChart = null; }
+  currentAsset = null;
 }
 
 function openTrading(assetId) {
-    if (!walletConnected) { showToast("⚠️","Connect wallet first","error"); return; }
-    currentAsset = demoAssets.find(a => a.id === assetId);
-    if (!currentAsset) return;
-    document.getElementById("mainView").classList.remove("active");
-    document.getElementById("tradingView").classList.add("active");
-    document.getElementById("tvIcon").textContent = currentAsset.icon;
-    document.getElementById("tvName").textContent = currentAsset.name;
-    document.getElementById("tvCategory").textContent = currentAsset.category;
-    updatePriceHeader();
-    const links = [];
-    if (currentAsset.website) links.push(`<a class="asset-link" href="${currentAsset.website}" target="_blank">🌐 Website</a>`);
-    if (currentAsset.twitter) links.push(`<a class="asset-link" href="https://twitter.com/${currentAsset.twitter.replace('@','')}" target="_blank">𝕏 ${currentAsset.twitter}</a>`);
-    if (currentAsset.telegram) links.push(`<a class="asset-link" href="https://t.me/${currentAsset.telegram.replace('@','')}" target="_blank">✈️ ${currentAsset.telegram}</a>`);
-    document.getElementById("tvLinks").innerHTML = links.join("");
-    currentSide = 'long'; currentLeverage = 1;
-    document.getElementById("leverageSlider").value = 1;
-    document.getElementById("leverageVal").textContent = "1x";
-    setSide('long');
-    updateSummary();
-    renderCharts();
-    renderPositions();
-    liveInterval = setInterval(tickPrice, 2500);
+  if (!walletConnected) { showConnectModal(); return; }
+  currentAsset = demoAssets.find(a => a.id === assetId);
+  if (!currentAsset) return;
+  document.getElementById("mainView").classList.remove("active");
+  document.getElementById("tradingView").classList.add("active");
+  document.getElementById("tvIcon").textContent = currentAsset.icon;
+  document.getElementById("tvName").textContent = currentAsset.name;
+  document.getElementById("tvCategory").textContent = currentAsset.category;
+  updatePriceHeader();
+  const links = [];
+  if (currentAsset.website) links.push(`<a class="asset-link" href="${currentAsset.website}" target="_blank">🌐 Website</a>`);
+  if (currentAsset.twitter) links.push(`<a class="asset-link" href="https://twitter.com/${currentAsset.twitter.replace('@','')}" target="_blank">𝕏 ${currentAsset.twitter}</a>`);
+  if (currentAsset.telegram) links.push(`<a class="asset-link" href="https://t.me/${currentAsset.telegram.replace('@','')}" target="_blank">✈️ ${currentAsset.telegram}</a>`);
+  document.getElementById("tvLinks").innerHTML = links.join("");
+  currentSide = 'long'; currentLeverage = 1; yZoom = 1.0;
+  document.getElementById("leverageSlider").value = 1;
+  document.getElementById("leverageVal").textContent = "1x";
+  setSide('long'); updateSummary();
+  renderCharts(); renderPositions();
+  setupYAxisDrag();
+  liveInterval = setInterval(tickPrice, 2500);
 }
 
 function updatePriceHeader() {
-    if (!currentAsset) return;
-    const pct = ((currentAsset.pricePerFraction - currentAsset.basePrice) / currentAsset.basePrice * 100).toFixed(2);
-    const up = parseFloat(pct) >= 0;
-    document.getElementById("tvPrice").textContent = currentAsset.pricePerFraction.toFixed(4) + " SOL";
-    document.getElementById("tvChange").textContent = (up ? "+" : "") + pct + "%";
-    document.getElementById("tvChange").className = "trading-price-change " + (up ? "price-up" : "price-down");
+  if (!currentAsset) return;
+  const pct = ((currentAsset.pricePerFraction - currentAsset.basePrice) / currentAsset.basePrice * 100).toFixed(2);
+  const up = parseFloat(pct) >= 0;
+  document.getElementById("tvPrice").textContent = currentAsset.pricePerFraction.toFixed(4) + " SOL";
+  document.getElementById("tvChange").textContent = (up?"+":"") + pct + "%";
+  document.getElementById("tvChange").className = "trading-price-change " + (up?"price-up":"price-down");
 }
 
-function tickPrice() {
-    if (!currentAsset) return;
-    const change = (Math.random() - 0.49) * 0.008;
-    currentAsset.pricePerFraction = Math.max(0.001, currentAsset.pricePerFraction + change);
-    updatePriceHeader();
-    updateSummary();
-
-    if (priceChart && candleData.length > 0) {
-        const last = candleData[candleData.length - 1];
-        const price = currentAsset.pricePerFraction;
-        const now = Date.now();
-
-        if (currentCandle && now - currentCandle.x < 30000) {
-            currentCandle.c = parseFloat(price.toFixed(5));
-            currentCandle.h = parseFloat(Math.max(currentCandle.h, price).toFixed(5));
-            currentCandle.l = parseFloat(Math.min(currentCandle.l, price).toFixed(5));
-            candleData[candleData.length - 1] = { ...currentCandle };
-        } else {
-            const newCandle = { x: now, o: parseFloat(price.toFixed(5)), h: parseFloat(price.toFixed(5)), l: parseFloat(price.toFixed(5)), c: parseFloat(price.toFixed(5)) };
-            candleData.push(newCandle);
-            currentCandle = newCandle;
-            if (candleData.length > 60) candleData.shift();
-        }
-
-        priceChart.data.datasets[0].data = [...candleData];
-        priceChart.update('none');
+// ---- Y-AXIS DRAG ZOOM ----
+function setupYAxisDrag() {
+  const handle = document.getElementById("yAxisDrag");
+  handle.onmousedown = (e) => {
+    yDragging = true;
+    yDragStartY = e.clientY;
+    yDragStartZoom = yZoom;
+    handle.classList.add("dragging");
+    e.preventDefault();
+  };
+  document.onmousemove = (e) => {
+    if (!yDragging || !priceChart) return;
+    const delta = (yDragStartY - e.clientY) / 120;
+    yZoom = Math.max(0.2, Math.min(5.0, yDragStartZoom + delta));
+    applyYZoom();
+  };
+  document.onmouseup = () => {
+    if (yDragging) {
+      yDragging = false;
+      document.getElementById("yAxisDrag").classList.remove("dragging");
     }
+  };
+  // Touch support
+  handle.ontouchstart = (e) => {
+    yDragging = true;
+    yDragStartY = e.touches[0].clientY;
+    yDragStartZoom = yZoom;
+    handle.classList.add("dragging");
+  };
+  document.ontouchmove = (e) => {
+    if (!yDragging || !priceChart) return;
+    const delta = (yDragStartY - e.touches[0].clientY) / 120;
+    yZoom = Math.max(0.2, Math.min(5.0, yDragStartZoom + delta));
+    applyYZoom();
+  };
+  document.ontouchend = () => { yDragging = false; document.getElementById("yAxisDrag").classList.remove("dragging"); };
 }
 
+function applyYZoom() {
+  if (!priceChart || !candleData.length) return;
+  const prices = candleData.map(d => [d.h, d.l]).flat();
+  const mid = (Math.max(...prices) + Math.min(...prices)) / 2;
+  const range = (Math.max(...prices) - Math.min(...prices));
+  const halfRange = (range / 2) / yZoom;
+  priceChart.options.scales.y.min = parseFloat((mid - halfRange * 1.1).toFixed(5));
+  priceChart.options.scales.y.max = parseFloat((mid + halfRange * 1.1).toFixed(5));
+  priceChart.update('none');
+}
+
+// ---- CANDLE DATA ----
+function genCandleData(base, points, vol) {
+  const data = []; let price = base * 0.92; const now = Date.now();
+  for (let i = points; i >= 0; i--) {
+    const open = price;
+    const change = (Math.random() - 0.47) * vol;
+    const close = Math.max(base * 0.4, open + change);
+    const high = Math.max(open, close) + Math.random() * vol * 0.5;
+    const low = Math.min(open, close) - Math.random() * vol * 0.5;
+    data.push({x: now - i * 3600000, o: parseFloat(open.toFixed(5)), h: parseFloat(high.toFixed(5)), l: parseFloat(Math.max(low, base * 0.3).toFixed(5)), c: parseFloat(close.toFixed(5))});
+    price = close;
+  }
+  return data;
+}
+
+function genVolData(points) {
+  const data = []; const now = Date.now();
+  for (let i = points; i >= 0; i--) data.push({x: now - i * 3600000, y: Math.floor(Math.random() * 600 + 80)});
+  return data;
+}
+
+// ---- TICK PRICE ----
+function tickPrice() {
+  if (!currentAsset) return;
+  currentAsset.pricePerFraction = Math.max(0.001, currentAsset.pricePerFraction + (Math.random() - 0.49) * 0.008);
+  updatePriceHeader(); updateSummary();
+  if (priceChart && candleData.length > 0) {
+    const price = currentAsset.pricePerFraction;
+    const now = Date.now();
+    if (currentCandle && now - currentCandle.x < 30000) {
+      currentCandle.c = parseFloat(price.toFixed(5));
+      currentCandle.h = parseFloat(Math.max(currentCandle.h, price).toFixed(5));
+      currentCandle.l = parseFloat(Math.min(currentCandle.l, price).toFixed(5));
+      candleData[candleData.length - 1] = {...currentCandle};
+    } else {
+      const nc = {x:now, o:parseFloat(price.toFixed(5)), h:parseFloat(price.toFixed(5)), l:parseFloat(price.toFixed(5)), c:parseFloat(price.toFixed(5))};
+      candleData.push(nc); currentCandle = nc;
+      if (candleData.length > 60) candleData.shift();
+    }
+    priceChart.data.datasets[0].data = candleData.map(d => ({x:d.x, y:d.c}));
+    priceChart.update('none');
+  }
+}
+
+// ---- RENDER CHARTS ----
 function renderCharts() {
-    if (priceChart) { priceChart.destroy(); priceChart = null; }
-    if (volChart) { volChart.destroy(); volChart = null; }
+  if (priceChart) { priceChart.destroy(); priceChart = null; }
+  if (volChart) { volChart.destroy(); volChart = null; }
+  candleData = genCandleData(currentAsset.basePrice, 60, currentAsset.basePrice * 0.018);
+  currentCandle = candleData[candleData.length - 1];
+  const volData = genVolData(60);
+  const highs = candleData.map(d => d.h), lows = candleData.map(d => d.l);
+  document.getElementById("statOpen").textContent = candleData[0].o.toFixed(4) + " SOL";
+  document.getElementById("statHigh").textContent = Math.max(...highs).toFixed(4) + " SOL";
+  document.getElementById("statLow").textContent = Math.min(...lows).toFixed(4) + " SOL";
+  document.getElementById("statVol").textContent = volData.reduce((s,d) => s+d.y, 0).toLocaleString();
 
-    candleData = genCandleData(currentAsset.basePrice, 60, currentAsset.basePrice * 0.018);
-    currentCandle = candleData[candleData.length - 1];
-    const volData = genVolData(60);
+  const candlePlugin = {
+    id: 'candlestick',
+    beforeDatasetsDraw(chart) {
+      const {ctx, data, scales:{x,y}} = chart;
+      const ds = data.datasets[0].data;
+      if (!ds || !ds.length) return;
+      const barW = Math.max(3, (x.width / ds.length) * 0.55);
+      ds.forEach((pt, i) => {
+        const d = candleData[i];
+        if (!d) return;
+        const xPos = x.getPixelForValue(pt.x);
+        const oY = y.getPixelForValue(d.o), cY = y.getPixelForValue(d.c);
+        const hY = y.getPixelForValue(d.h), lY = y.getPixelForValue(d.l);
+        const bull = d.c >= d.o;
+        const color = bull ? "#14F195" : "#ef4444";
+        ctx.save();
+        ctx.strokeStyle = color; ctx.lineWidth = 1;
+        // upper wick
+        ctx.beginPath(); ctx.moveTo(xPos, hY); ctx.lineTo(xPos, Math.min(oY,cY)); ctx.stroke();
+        // lower wick
+        ctx.beginPath(); ctx.moveTo(xPos, lY); ctx.lineTo(xPos, Math.max(oY,cY)); ctx.stroke();
+        // body
+        const bodyH = Math.max(1, Math.abs(cY - oY));
+        ctx.fillStyle = bull ? "rgba(20,241,149,0.85)" : "rgba(239,68,68,0.85)";
+        ctx.fillRect(xPos - barW/2, Math.min(oY,cY), barW, bodyH);
+        ctx.strokeRect(xPos - barW/2, Math.min(oY,cY), barW, bodyH);
+        ctx.restore();
+      });
+    }
+  };
 
-    const highs = candleData.map(d => d.h);
-    const lows  = candleData.map(d => d.l);
-    document.getElementById("statOpen").textContent = candleData[0].o.toFixed(4) + " SOL";
-    document.getElementById("statHigh").textContent = Math.max(...highs).toFixed(4) + " SOL";
-    document.getElementById("statLow").textContent  = Math.min(...lows).toFixed(4) + " SOL";
-    document.getElementById("statVol").textContent  = volData.reduce((s,d) => s+d.y, 0).toLocaleString();
-
-    const candlePlugin = {
-        id: 'candlestick',
-        beforeDatasetsDraw(chart) {
-            const { ctx, data, scales: { x, y } } = chart;
-            const ds = data.datasets[0].data;
-            if (!ds || !ds.length) return;
-            const barWidth = Math.max(3, (x.width / ds.length) * 0.6);
-            ds.forEach(d => {
-                const xPos = x.getPixelForValue(d.x);
-                const oY = y.getPixelForValue(d.o);
-                const cY = y.getPixelForValue(d.c);
-                const hY = y.getPixelForValue(d.h);
-                const lY = y.getPixelForValue(d.l);
-                const bull = d.c >= d.o;
-                const color = bull ? "#14F195" : "#ef4444";
-                ctx.save();
-                ctx.strokeStyle = color;
-                ctx.fillStyle = bull ? "rgba(20,241,149,0.85)" : "rgba(239,68,68,0.85)";
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(xPos, hY);
-                ctx.lineTo(xPos, Math.min(oY, cY));
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(xPos, lY);
-                ctx.lineTo(xPos, Math.max(oY, cY));
-                ctx.stroke();
-                const bodyH = Math.max(1, Math.abs(cY - oY));
-                ctx.fillRect(xPos - barWidth/2, Math.min(oY, cY), barWidth, bodyH);
-                ctx.strokeRect(xPos - barWidth/2, Math.min(oY, cY), barWidth, bodyH);
-                ctx.restore();
-            });
-        }
-    };
-
-    priceChart = new Chart(document.getElementById("priceChart"), {
-        type: 'scatter',
-        data: { datasets: [{ label:'Price', data: candleData.map(d => ({ x:d.x, y:d.c })), pointRadius:0 }] },
-        options: {
-            responsive:true, maintainAspectRatio:false, animation:false,
-            plugins:{
-                legend:{ display:false },
-                tooltip:{
-                    backgroundColor:'#1e293b', titleColor:'#94a3b8', bodyColor:'#e2e8f0', borderColor:'#334155', borderWidth:1,
-                    callbacks:{
-                        title: items => {
-                            const d = candleData[items[0].dataIndex];
-                            return d ? new Date(d.x).toLocaleTimeString() : '';
-                        },
-                        label: items => {
-                            const d = candleData[items.dataIndex];
-                            if (!d) return '';
-                            return [`O: ${d.o.toFixed(4)}  H: ${d.h.toFixed(4)}`, `L: ${d.l.toFixed(4)}  C: ${d.c.toFixed(4)}`];
-                        }
-                    }
-                },
-                candlestick: {}
-            },
-            scales:{
-                x:{ type:'time', time:{ unit:'hour', displayFormats:{ hour:'HH:mm' } }, grid:{ color:'#1a2236' }, ticks:{ color:'#64748b', font:{ size:10 }, maxTicksLimit:8 } },
-                y:{ position:'right', grid:{ color:'#1a2236' }, ticks:{ color:'#64748b', font:{ size:10 }, callback: v => v.toFixed(3) } }
-            }
+  priceChart = new Chart(document.getElementById("priceChart"), {
+    type: 'scatter',
+    data: {datasets:[{label:'Price', data:candleData.map(d=>({x:d.x,y:d.c})), pointRadius:0}]},
+    options: {
+      responsive:true, maintainAspectRatio:false, animation:false,
+      layout:{padding:{right:0}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#1e293b', titleColor:'#94a3b8', bodyColor:'#e2e8f0', borderColor:'#334155', borderWidth:1,
+          callbacks:{
+            title: items => { const d = candleData[items[0].dataIndex]; return d ? new Date(d.x).toLocaleTimeString() : ''; },
+            label: items => { const d = candleData[items.dataIndex]; if(!d) return ''; return [`O: ${d.o.toFixed(4)}  H: ${d.h.toFixed(4)}`,`L: ${d.l.toFixed(4)}  C: ${d.c.toFixed(4)}`]; }
+          }
         },
-        plugins: [candlePlugin]
-    });
+        candlestick:{}
+      },
+      scales:{
+        x:{type:'time', time:{unit:'hour', displayFormats:{hour:'HH:mm'}}, grid:{color:'#1a2236'}, ticks:{color:'#64748b', font:{size:10}, maxTicksLimit:8}},
+        y:{position:'right', grid:{color:'#1a2236'}, ticks:{color:'#64748b', font:{size:10}, callback: v => v.toFixed(3)}}
+      }
+    },
+    plugins:[candlePlugin]
+  });
 
-    volChart = new Chart(document.getElementById("volumeChart"), {
-        type:'bar',
-        data:{ datasets:[{ label:'Vol', data:volData, backgroundColor: volData.map((_,i) => candleData[i] && candleData[i].c >= candleData[i].o ? 'rgba(20,241,149,0.4)' : 'rgba(239,68,68,0.4)'), borderWidth:0, borderRadius:1 }] },
-        options:{
-            responsive:true, maintainAspectRatio:false, animation:false,
-            plugins:{ legend:{ display:false } },
-            scales:{ x:{ type:'time', time:{ unit:'hour' }, grid:{ display:false }, ticks:{ display:false } }, y:{ position:'right', grid:{ display:false }, ticks:{ color:'#64748b', font:{ size:9 }, maxTicksLimit:3 } } }
-        }
-    });
+  volChart = new Chart(document.getElementById("volumeChart"), {
+    type:'bar',
+    data:{datasets:[{label:'Vol', data:volData, backgroundColor:volData.map((_,i) => candleData[i] && candleData[i].c >= candleData[i].o ? 'rgba(20,241,149,0.4)':'rgba(239,68,68,0.4)'), borderWidth:0, borderRadius:1}]},
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{type:'time', time:{unit:'hour'}, grid:{display:false}, ticks:{display:false}}, y:{position:'right', grid:{display:false}, ticks:{color:'#64748b', font:{size:9}, maxTicksLimit:3}}}
+    }
+  });
 }
 
 function setTf(tf, btn) {
-    document.querySelectorAll(".tf-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    if (currentAsset) renderCharts();
+  document.querySelectorAll(".tf-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  if (currentAsset) { yZoom = 1.0; renderCharts(); }
 }
 
+// ---- ORDER ----
 function setSide(side) {
-    currentSide = side;
-    const lt = document.getElementById("longTab"), st = document.getElementById("shortTab"), btn = document.getElementById("executeBtn");
-    if (side === 'long') { lt.className="order-tab active-long"; st.className="order-tab"; btn.className="long-btn"; btn.textContent="Open Long Position"; }
-    else { st.className="order-tab active-short"; lt.className="order-tab"; btn.className="short-btn"; btn.textContent="Open Short Position"; }
-    updateSummary();
+  currentSide = side;
+  const lt = document.getElementById("longTab"), st = document.getElementById("shortTab"), btn = document.getElementById("executeBtn");
+  if (side==='long') { lt.className="order-tab active-long"; st.className="order-tab"; btn.className="long-btn"; btn.textContent="Open Long Position"; }
+  else { st.className="order-tab active-short"; lt.className="order-tab"; btn.className="short-btn"; btn.textContent="Open Short Position"; }
+  updateSummary();
 }
 
 function updateLeverage(v) {
-    currentLeverage = parseInt(v);
-    document.getElementById("leverageVal").textContent = v + "x";
-    document.getElementById("sumLev").textContent = v + "x";
-    updateSummary();
+  currentLeverage = parseInt(v);
+  document.getElementById("leverageVal").textContent = v + "x";
+  document.getElementById("sumLev").textContent = v + "x";
+  updateSummary();
 }
 
 function updateSummary() {
-    if (!currentAsset) return;
-    const amt = parseInt(document.getElementById("orderAmount").value) || 0;
-    const price = currentAsset.pricePerFraction;
-    const total = (amt * price / currentLeverage).toFixed(4);
-    document.getElementById("sumPrice").textContent = price.toFixed(4) + " SOL";
-    document.getElementById("sumSize").textContent = (amt * currentLeverage) + " fractions";
-    document.getElementById("sumLev").textContent = currentLeverage + "x";
-    document.getElementById("sumTotal").textContent = total + " SOL";
+  if (!currentAsset) return;
+  const amt = parseInt(document.getElementById("orderAmount").value) || 0;
+  const price = currentAsset.pricePerFraction;
+  const total = (amt * price / currentLeverage).toFixed(4);
+  document.getElementById("sumPrice").textContent = price.toFixed(4) + " SOL";
+  document.getElementById("sumSize").textContent = (amt * currentLeverage) + " fractions";
+  document.getElementById("sumLev").textContent = currentLeverage + "x";
+  document.getElementById("sumTotal").textContent = total + " SOL";
 }
 
 function executeTrade() {
-    if (!walletConnected) { showToast("⚠️","Connect wallet first","error"); return; }
-    const amt = parseInt(document.getElementById("orderAmount").value) || 0;
-    if (amt < 1) { showToast("⚠️","Enter amount","error"); return; }
-    const entryPrice = currentAsset.pricePerFraction;
-    const pos = { id:Date.now(), asset:currentAsset.name, icon:currentAsset.icon, side:currentSide, amount:amt * currentLeverage, entryPrice, leverage:currentLeverage, pnl:0, assetRef:currentAsset };
-    openPositions.push(pos);
+  if (!walletConnected) { showConnectModal(); return; }
+  const amt = parseInt(document.getElementById("orderAmount").value) || 0;
+  if (amt < 1) { showToast("⚠️","Enter amount","error"); return; }
+  const cost = parseFloat((amt * currentAsset.pricePerFraction / currentLeverage).toFixed(4));
+  if (isDemo) {
+    const usdCost = cost * 150;
+    if (usdCost > demoBalance) { showToast("❌","Insufficient demo balance","error"); return; }
+    demoBalance = parseFloat((demoBalance - usdCost).toFixed(2));
+    updateBalancePill();
+  }
+  const pos = {id:Date.now(), asset:currentAsset.name, icon:currentAsset.icon, side:currentSide, amount:amt*currentLeverage, entryPrice:currentAsset.pricePerFraction, leverage:currentLeverage, pnl:0, assetRef:currentAsset};
+  openPositions.push(pos); renderPositions();
+  showToast("✅", (currentSide==='long'?"▲ Long ":"▼ Short ") + (amt*currentLeverage) + " fractions @ " + pos.entryPrice.toFixed(4) + " SOL", "success");
+  if (pnlInterval) clearInterval(pnlInterval);
+  pnlInterval = setInterval(() => {
+    openPositions.forEach(p => {
+      const cur = p.assetRef.pricePerFraction;
+      p.pnl = parseFloat(((p.side==='long' ? cur-p.entryPrice : p.entryPrice-cur) * p.amount).toFixed(5));
+    });
     renderPositions();
-    showToast("✅", (currentSide==='long'?"Long ":"Short ") + (amt * currentLeverage) + " fractions @ " + entryPrice.toFixed(4), "success");
-    if (pnlInterval) clearInterval(pnlInterval);
-    pnlInterval = setInterval(() => {
-        openPositions.forEach(p => {
-            const cur = p.assetRef.pricePerFraction;
-            p.pnl = parseFloat(((p.side==='long' ? cur-p.entryPrice : p.entryPrice-cur) * p.amount).toFixed(5));
-        });
-        renderPositions();
-    }, 2500);
+  }, 2500);
 }
 
 function renderPositions() {
-    const c = document.getElementById("positionsList");
-    if (!openPositions.length) { c.innerHTML='<div style="font-size:11px;color:#64748b;text-align:center;padding:12px 0;">No open positions</div>'; return; }
-    c.innerHTML = openPositions.map(p => `
-        <div class="position-card">
-            <div class="position-header">
-                <span class="position-type ${p.side}">${p.side.toUpperCase()} ${p.icon}</span>
-                <span class="position-pnl ${p.pnl>=0?'price-up':'price-down'}">${p.pnl>=0?'+':''}${p.pnl.toFixed(4)} SOL</span>
-            </div>
-            <div class="position-details">${p.amount} fractions · Entry: ${p.entryPrice.toFixed(4)} · ${p.leverage}x</div>
-        </div>`).join("");
-}
-
-function renderAssets() {
-    document.getElementById("assetsGrid").innerHTML = demoAssets.map(asset => {
-        const sold = Math.round((1 - asset.availableFractions / asset.totalFractions) * 100);
-        const links = [];
-        if (asset.website) links.push(`<a href="${asset.website}" target="_blank" style="color:#64748b;font-size:11px;text-decoration:none;">🌐 Website</a>`);
-        if (asset.twitter) links.push(`<a href="https://twitter.com/${asset.twitter.replace('@','')}" target="_blank" style="color:#64748b;font-size:11px;text-decoration:none;">𝕏 ${asset.twitter}</a>`);
-        if (asset.telegram) links.push(`<a href="https://t.me/${asset.telegram.replace('@','')}" target="_blank" style="color:#64748b;font-size:11px;text-decoration:none;">✈️ ${asset.telegram}</a>`);
-        const lh = links.length ? `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">${links.join("")}</div>` : "";
-        return `<div class="asset-card" onclick="openTrading(${asset.id})">
-            <div class="asset-img">${asset.icon}</div>
-            <div class="asset-body">
-                <div class="asset-name">${asset.name}</div>
-                <div class="asset-desc">${asset.description}</div>
-                ${lh}
-                <div class="asset-stats">
-                    <div class="asset-stat"><div class="asset-stat-label">Total Value</div><div class="asset-stat-value">${asset.totalValue} SOL</div></div>
-                    <div class="asset-stat"><div class="asset-stat-label">Annual Yield</div><div class="asset-stat-value" style="color:#14F195;">${asset.yield}</div></div>
-                    <div class="asset-stat"><div class="asset-stat-label">Per Fraction</div><div class="asset-stat-value">${asset.pricePerFraction} SOL</div></div>
-                    <div class="asset-stat"><div class="asset-stat-label">Available</div><div class="asset-stat-value">${asset.availableFractions}</div></div>
-                </div>
-                <div class="progress-label"><span>Sold: ${sold}%</span><span>${asset.totalFractions-asset.availableFractions} / ${asset.totalFractions}</span></div>
-                <div class="progress-bar"><div class="progress-fill" style="width:${sold}%"></div></div>
-                <button class="trade-btn" onclick="event.stopPropagation();openTrading(${asset.id})">📈 Trade — ${asset.pricePerFraction} SOL / fraction</button>
-            </div>
-        </div>`;
-    }).join("");
-}
-
-async function createAsset() {
-    if (!walletConnected) { showToast("⚠️","Connect wallet first","error"); return; }
-    const name = document.getElementById("assetName").value.trim();
-    const desc = document.getElementById("assetDesc").value.trim();
-    const value = parseFloat(document.getElementById("assetValue").value);
-    const fractions = parseInt(document.getElementById("assetFractions").value);
-    const price = parseFloat(document.getElementById("assetPrice").value);
-    const website = document.getElementById("assetWebsite").value.trim();
-    const twitter = document.getElementById("assetTwitter").value.trim();
-    const telegram = document.getElementById("assetTelegram").value.trim();
-    const category = document.getElementById("assetCategory").value;
-    if (!name || !desc || !value || !fractions || !price) { showToast("⚠️","Fill all required fields","error"); return; }
-    const icons = { "real-estate":"🏢","bonds":"📜","energy":"⚡","commodities":"🏭","other":"🔷" };
-    showToast("⏳","Creating asset on Solana...","success");
-    setTimeout(() => {
-        demoAssets.push({ id:demoAssets.length+1, name, description:desc, totalValue:value, totalFractions:fractions, availableFractions:fractions, pricePerFraction:price, yield:"TBD", icon:icons[category]||"🔷", website, twitter, telegram, category, basePrice:price });
-        renderAssets();
-        showToast("✅",`"${name}" created!`,"success");
-        showTab("marketplace", document.querySelector(".tab"));
-    }, 2000);
-}
-
-function addToPortfolio(asset, amount) {
-    const ex = portfolio.find(p => p.id === asset.id);
-    if (ex) ex.fractions += amount; else portfolio.push({ ...asset, fractions:amount });
-    renderPortfolio();
-}
-
-function renderPortfolio() {
-    const c = document.getElementById("portfolioContent");
-    if (!portfolio.length) { c.innerHTML='<div class="empty-state"><div class="empty-icon">💼</div><p>No investments yet</p></div>'; return; }
-    const total = portfolio.reduce((s,p) => s + p.fractions * p.pricePerFraction, 0);
-    c.innerHTML = `<div style="background:#111827;border:1px solid #1e293b;border-radius:10px;padding:18px;margin-bottom:20px;display:flex;gap:28px;">
-        <div><div style="font-size:12px;color:#64748b;">Total Invested</div><div style="font-size:22px;font-weight:700;color:#14F195;">${total.toFixed(2)} SOL</div></div>
-        <div><div style="font-size:12px;color:#64748b;">Assets</div><div style="font-size:22px;font-weight:700;">${portfolio.length}</div></div>
-    </div>` + portfolio.map(p => `
-    <div class="portfolio-card">
-        <div class="portfolio-left">
-            <div class="portfolio-icon">${p.icon}</div>
-            <div><div class="portfolio-name">${p.name}</div><div class="portfolio-fractions">${p.fractions} fractions · ${p.yield} yield</div></div>
-        </div>
-        <div class="portfolio-value">${(p.fractions * p.pricePerFraction).toFixed(2)} SOL</div>
+  const c = document.getElementById("positionsList");
+  if (!openPositions.length) { c.innerHTML='<div style="font-size:11px;color:#64748b;text-align:center;padding:12px 0;">No open positions</div>'; return; }
+  c.innerHTML = openPositions.map(p => `
+    <div class="position-card">
+      <div class="position-header">
+        <span class="position-type ${p.side}">${p.side.toUpperCase()} ${p.icon}</span>
+        <span class="position-pnl ${p.pnl>=0?'price-up':'price-down'}">${p.pnl>=0?'+':''}${p.pnl.toFixed(4)} SOL</span>
+      </div>
+      <div class="position-details">${p.amount} fractions · Entry: ${p.entryPrice.toFixed(4)} · ${p.leverage}x</div>
     </div>`).join("");
+}
+
+// ---- MARKETPLACE ----
+function renderAssets() {
+  document.getElementById("assetsGrid").innerHTML = demoAssets.map(asset => {
+    const sold = Math.round((1 - asset.availableFractions / asset.totalFractions) * 100);
+    const links = [];
+    if (asset.website) links.push(`<a href="${asset.website}" target="_blank" style="color:#64748b;font-size:11px;text-decoration:none;">🌐 Website</a>`);
+    if (asset.twitter) links.push(`<a href="https://twitter.com/${asset.twitter.replace('@','')}" target="_blank" style="color:#64748b;font-size:11px;text-decoration:none;">𝕏 ${asset.twitter}</a>`);
+    if (asset.telegram) links.push(`<a href="https://t.me/${asset.telegram.replace('@','')}" target="_blank" style="color:#64748b;font-size:11px;text-decoration:none;">✈️ ${asset.telegram}</a>`);
+    const lh = links.length ? `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">${links.join("")}</div>` : "";
+    return `<div class="asset-card" onclick="openTrading(${asset.id})">
+      <div class="asset-img">${asset.icon}</div>
+      <div class="asset-body">
+        <div class="asset-name">${asset.name}</div>
+        <div class="asset-desc">${asset.description}</div>
+        ${lh}
+        <div class="asset-stats">
+          <div class="asset-stat"><div class="asset-stat-label">Total Value</div><div class="asset-stat-value">${asset.totalValue} SOL</div></div>
+          <div class="asset-stat"><div class="asset-stat-label">Annual Yield</div><div class="asset-stat-value" style="color:#14F195;">${asset.yield}</div></div>
+          <div class="asset-stat"><div class="asset-stat-label">Per Fraction</div><div class="asset-stat-value">${asset.pricePerFraction} SOL</div></div>
+          <div class="asset-stat"><div class="asset-stat-label">Available</div><div class="asset-stat-value">${asset.availableFractions}</div></div>
+        </div>
+        <div class="progress-label"><span>Sold: ${sold}%</span><span>${asset.totalFractions-asset.availableFractions} / ${asset.totalFractions}</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${sold}%"></div></div>
+        <button class="trade-btn" onclick="event.stopPropagation();openTrading(${asset.id})">📈 Trade — ${asset.pricePerFraction} SOL / fraction</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ---- CREATE ASSET ----
+async function createAsset() {
+  if (!walletConnected) { showConnectModal(); return; }
+  const name = document.getElementById("assetName").value.trim();
+  const desc = document.getElementById("assetDesc").value.trim();
+  const value = parseFloat(document.getElementById("assetValue").value);
+  const fractions = parseInt(document.getElementById("assetFractions").value);
+  const price = parseFloat(document.getElementById("assetPrice").value);
+  const website = document.getElementById("assetWebsite").value.trim();
+  const twitter = document.getElementById("assetTwitter").value.trim();
+  const telegram = document.getElementById("assetTelegram").value.trim();
+  const category = document.getElementById("assetCategory").value;
+  if (!name||!desc||!value||!fractions||!price) { showToast("⚠️","Fill all required fields","error"); return; }
+  const icons = {"real-estate":"🏢","bonds":"📜","energy":"⚡","commodities":"🏭","other":"🔷"};
+  showToast("⏳","Creating asset on Solana...","success");
+  setTimeout(() => {
+    demoAssets.push({id:demoAssets.length+1,name,description:desc,totalValue:value,totalFractions:fractions,availableFractions:fractions,pricePerFraction:price,yield:"TBD",icon:icons[category]||"🔷",website,twitter,telegram,category,basePrice:price});
+    renderAssets();
+    showToast("✅",`"${name}" created!`,"success");
+    showTab("marketplace", document.querySelector(".tab"));
+  }, 2000);
+}
+
+// ---- PORTFOLIO ----
+function renderPortfolio() {
+  const c = document.getElementById("portfolioContent");
+  if (!portfolio.length) { c.innerHTML='<div class="empty-state"><div class="empty-icon">💼</div><p>No investments yet</p></div>'; return; }
+  const total = portfolio.reduce((s,p) => s+p.fractions*p.pricePerFraction, 0);
+  c.innerHTML = `<div style="background:#111827;border:1px solid #1e293b;border-radius:10px;padding:18px;margin-bottom:20px;display:flex;gap:28px;">
+    <div><div style="font-size:12px;color:#64748b;">Total Invested</div><div style="font-size:22px;font-weight:700;color:#14F195;">${total.toFixed(2)} SOL</div></div>
+    <div><div style="font-size:12px;color:#64748b;">Assets</div><div style="font-size:22px;font-weight:700;">${portfolio.length}</div></div>
+    ${isDemo ? `<div><div style="font-size:12px;color:#64748b;">Demo Balance</div><div style="font-size:22px;font-weight:700;color:#f59e0b;">$${demoBalance.toLocaleString()}</div></div>` : ''}
+  </div>` + portfolio.map(p => `
+  <div class="portfolio-card">
+    <div class="portfolio-left">
+      <div class="portfolio-icon">${p.icon}</div>
+      <div><div class="portfolio-name">${p.name}</div><div class="portfolio-fractions">${p.fractions} fractions · ${p.yield} yield</div></div>
+    </div>
+    <div class="portfolio-value">${(p.fractions*p.pricePerFraction).toFixed(2)} SOL</div>
+  </div>`).join("");
 }
 
 function loadPortfolio() { renderPortfolio(); }
 
+// ---- UI ----
 function showTab(tab, el) {
-    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    document.getElementById(tab).classList.add("active");
-    if (el) el.classList.add("active");
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById(tab).classList.add("active");
+  if (el) el.classList.add("active");
 }
 
 let toastTimer;
 function showToast(icon, msg, type) {
-    const t = document.getElementById("toast");
-    document.getElementById("toastIcon").textContent = icon;
-    document.getElementById("toastMsg").textContent = msg;
-    t.className = `toast ${type} show`;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove("show"), 3500);
+  const t = document.getElementById("toast");
+  document.getElementById("toastIcon").textContent = icon;
+  document.getElementById("toastMsg").textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 3500);
 }
 
+// ---- INIT ----
 renderAssets();
 window.addEventListener("load", async () => {
-    if (window.solana?.isPhantom && window.solana.isConnected) await connectWallet();
+  if (window.solana?.isPhantom && window.solana.isConnected) await connectPhantom();
 });
 </script>
 </body>
